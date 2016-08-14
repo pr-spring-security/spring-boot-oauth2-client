@@ -19,9 +19,13 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         //antMathcers先定义的优先级和高
         http
                 .authorizeRequests()
+                .antMatchers("/swagger-ui.html","/v2/api-docs").permitAll()
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers("/api/**").permitAll()
-                .antMatchers("/**").authenticated()
+                .antMatchers("/**").permitAll()
+                //.antMatchers("/**").authenticated() will
+                // cause the url "http://localhost:8080/swagger-ui.html" be blank html,
+                //just remaining the head.
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }
