@@ -1,11 +1,13 @@
 # spring-boot-oauth2-client
 
-Oauth2 Resource Server with mongodb and swagger2.
+Oauth2 Resource Server with mongodb, postgresql and swagger2.
 
 The Oauth2 Authorization Server is [here]()
-This application imploded the framework for apis named swagger2.The database uses mongodb.
-You can change property named `spring.data.mongodb.uri` in `application.properties` to 
-your own develop environment.
+This application imploded the framework for apis named swagger2.The database uses mongodb and postgresql.
+1. Postgresql saves the oauth information,since the data structure of oauth is assured.
+You can get the data in postgresql by JdbcTemplate.
+2. MongoDB saves information except oauth's and user's information.
+You can change properties in `application.properties` to your own develop environment.
 
 Check if swagger2 is OK:
 [http://localhost:8080/v2/api-docs](http://localhost:8080/v2/api-docs)
