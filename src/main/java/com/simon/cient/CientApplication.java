@@ -19,7 +19,13 @@ public class CientApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... strings) throws Exception {
-		int rowCount = this.jdbcTemplate.queryForObject("select count(*) from users", Integer.class);
-		System.out.println(rowCount);
+		/*int rowCount = this.jdbcTemplate.queryForObject("select count(*) from users", Integer.class);
+		System.out.println(rowCount);*/
+		/*int result = jdbcTemplate.update("INSERT INTO users (username,password,enabled) VALUES (?, ?, ?)",
+				"cyxxxx", "1234567890", true);
+		System.out.println(result);
+		int result2 = jdbcTemplate.update("INSERT INTO authorities (username, authority) VALUES (?, ?)",
+				"cyxxxx", "ROLE_APP");
+		System.out.println(result+":"+result2);*/
 	}
 }
