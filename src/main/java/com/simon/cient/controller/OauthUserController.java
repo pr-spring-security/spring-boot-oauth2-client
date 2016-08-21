@@ -1,18 +1,19 @@
 package com.simon.cient.controller;
 
+import com.simon.cient.domain.AppUser;
+import com.simon.cient.domain.AppUserRepository;
 import com.simon.cient.domain.jdbc.OauthUser;
 import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,32 +23,38 @@ import java.util.Map;
 /**
  * Created by simon on 2016/8/16.
  */
-@Api
+@Api(value="登录注册")
 @RestController
 @RequestMapping("/api/oauthUser")
 public class OauthUserController {
     @Autowired
     JdbcTemplate jdbcTemplate;
+    @Autowired
+    AppUserRepository appUserRepository;
 
-    @ApiOperation(value = "获取用户信息", notes = "this is notes", httpMethod = "GET")
-    @RequestMapping(method = RequestMethod.GET)
-    private Map<String, Object> get(@RequestParam String username) {
+    @ApiOperation(value = "登录", notes = "this is notes", httpMethod = "GET")
+    @RequestMapping(value = "/{username}/{password}", method = RequestMethod.GET)
+    private Map<String, Object> get(@PathVariable("username")String username,
+                                    @PathVariable("password")String password) {
         Map<String, Object> responseMap = new LinkedHashMap<>();
+        Map<String, Object> dataMap = new LinkedHashMap<>();
 
         try {
-            OauthUser oauthUser = findOauthUserByUsername(username);
+            OauthUser oauthUser = findOauthUserByUsername(username,password);
+            AppUser appUser = appUserRepository.findByUsername(username);
+            dataMap.put(ServerContext.USER_INFO, appUser);
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA, oauthUser);
-        } catch (DataAccessException e) {
+            responseMap.put(ServerContext.DATA, dataMap);
+        } catch (DataRetrievalFailureException e) {
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG, "there is no user named " + username);
+            responseMap.put(ServerContext.MSG, "username or password is incorrect.");
             responseMap.put(ServerContext.DATA, "");
         }
         return responseMap;
     }
 
-    @ApiOperation(value = "用户注册", notes = "this is notes", httpMethod = "POST")
+    @ApiOperation(value = "注册", notes = "this is notes", httpMethod = "POST")
     @RequestMapping(method = RequestMethod.POST)
     private Map<String, Object> post(@RequestParam String username, @RequestParam String password) {
         Map<String, Object> responseMap = new LinkedHashMap<>();
@@ -62,7 +69,7 @@ public class OauthUserController {
                 responseMap.put(ServerContext.MSG, "register success");
                 responseMap.put(ServerContext.DATA, "");
             }
-        } catch (DataAccessException e) {
+        } catch (DataIntegrityViolationException e) {
             responseMap.put(ServerContext.STATUS_CODE, 409);
             responseMap.put(ServerContext.MSG, "user exists");
             responseMap.put(ServerContext.DATA, "");
@@ -71,10 +78,10 @@ public class OauthUserController {
         return responseMap;
     }
 
-    public OauthUser findOauthUserByUsername(String username) {
+    public OauthUser findOauthUserByUsername(String username, String password) {
         return jdbcTemplate.queryForObject(
-                "SELECT username,password,enabled FROM users where username=?",
-                new Object[]{username}, new RowMapper<OauthUser>() {
+                "SELECT username,password,enabled FROM users where username=? AND password=?",
+                new Object[]{username, password}, new RowMapper<OauthUser>() {
                     @Override
                     public OauthUser mapRow(ResultSet resultSet, int i) throws SQLException {
                         OauthUser oauthUser = new OauthUser();

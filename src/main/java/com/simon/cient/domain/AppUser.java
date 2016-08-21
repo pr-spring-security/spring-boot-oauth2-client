@@ -11,14 +11,22 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class AppUser {
     @Id
     private String id;
-
-    @Field(value = "username")
     private String username;
-    private String password;
-    private boolean enabled;
+    private String phone;
+    private Boolean sex;
+    private Integer age;
+    private String birth;
 
-    public AppUser() {
-    }
+    @Field("person_brief")
+    private String personBrief;
+
+    @Field("head_photo")
+    private String headPhoto;
+
+    @Field("visit_card")
+    private String visitCard;
+
+    private String address;
 
     public String getId() {
         return id;
@@ -36,19 +44,67 @@ public class AppUser {
         this.username = username;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
-    public boolean isEnabled() {
-        return enabled;
+    public Boolean getSex() {
+        return sex;
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setSex(Boolean sex) {
+        this.sex = sex;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getBirth() {
+        return birth;
+    }
+
+    public void setBirth(String birth) {
+        this.birth = birth;
+    }
+
+    public String getPersonBrief() {
+        return personBrief;
+    }
+
+    public void setPersonBrief(String personBrief) {
+        this.personBrief = personBrief;
+    }
+
+    public String getHeadPhoto() {
+        return headPhoto;
+    }
+
+    public void setHeadPhoto(String headPhoto) {
+        this.headPhoto = headPhoto;
+    }
+
+    public String getVisitCard() {
+        return visitCard;
+    }
+
+    public void setVisitCard(String visitCard) {
+        this.visitCard = visitCard;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }
