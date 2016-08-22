@@ -10,10 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,7 +20,7 @@ import java.util.Map;
  */
 @Api(value = "新闻接口")
 @RestController
-@RequestMapping("/appNews")
+@RequestMapping("/api/appNews")
 public class AppNewsController {
 
     @Autowired
@@ -35,13 +32,13 @@ public class AppNewsController {
 
     @ApiOperation(value="获取新闻列表", notes = "新闻列表按时间降序排列")
     @RequestMapping(method = RequestMethod.GET)
-    private Map<String,Object> get(Integer limit, Integer offset){
+    private Map<String,Object> get(@RequestParam Integer limit,@RequestParam Integer offset){
         Map<String,Object> responseMap = new LinkedHashMap<>();
 
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,simpleNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))));
+            responseMap.put(ServerContext.DATA,simpleNewsRepository.findAll(new PageRequest(offset/limit+1, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))).getContent());
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,e.getMessage());
@@ -70,12 +67,12 @@ public class AppNewsController {
     @ApiOperation(value = "获取评论列表", notes = "评论列表按点赞数降序排列")
     @RequestMapping(value = "/{id}/comments", method = RequestMethod.GET)
     private Map<String, Object> getCommentsByNewsId(@PathVariable("id") String newsId,
-                                    Integer limit, Integer offset){
+                                    @RequestParam Integer limit,@RequestParam Integer offset){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "pointPraise"))));
+            responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit+1, limit, new Sort(Sort.Direction.ASC, "pointPraise"))).getContent());
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "there is no records that news_id is "+newsId);
@@ -86,12 +83,12 @@ public class AppNewsController {
 
     @ApiOperation(value="插入一条新闻")
     @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(AppNews appNews){
+    private Map<String, Object> post(@RequestBody AppNews appNews){
         Map<String,Object> responseMap = new LinkedHashMap<>();
 
         try{
             appNewsRepository.insert(appNews);
-            responseMap.put(ServerContext.STATUS_CODE,200);
+            responseMap.put(ServerContext.STATUS_CODE,201);
             responseMap.put(ServerContext.MSG,"");
             responseMap.put(ServerContext.DATA,"");
         }catch (Exception e){
@@ -105,7 +102,7 @@ public class AppNewsController {
 
     @ApiOperation(value="更新一条新闻")
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    private Map<String, Object> update(AppNews appNews){
+    private Map<String, Object> update(@RequestBody AppNews appNews){
         Map<String,Object> responseMap = new LinkedHashMap<>();
         try{
             appNewsRepository.save(appNews);

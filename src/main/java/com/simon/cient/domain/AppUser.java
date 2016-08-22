@@ -1,6 +1,7 @@
 package com.simon.cient.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -11,7 +12,9 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class AppUser {
     @Id
     private String id;
+    @Indexed
     private String username;
+    @Indexed
     private String phone;
     private Boolean sex;
     private Integer age;

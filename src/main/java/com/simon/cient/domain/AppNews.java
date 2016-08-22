@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 /**
  * Created by simon on 2016/8/17.
  */
+
 @Document(collection = "app_news")
 public class AppNews {
     @Id
