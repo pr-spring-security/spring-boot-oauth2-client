@@ -4,7 +4,10 @@ import com.simon.cient.domain.*;
 import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
@@ -12,8 +15,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * Created by simon on 2016/8/17.
@@ -29,6 +35,15 @@ public class AppNewsController {
     private NewsCommentRepository newsCommentRepository;
     @Autowired
     private SimpleNewsRepository simpleNewsRepository;
+
+    private final ResourceLoader resourceLoader;
+
+    private static final String ROOT = "news";
+
+    @Autowired
+    public AppNewsController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
 
     @ApiOperation(value="获取新闻列表", notes = "新闻列表按时间降序排列")
     @RequestMapping(method = RequestMethod.GET)
@@ -49,16 +64,18 @@ public class AppNewsController {
     }
 
     @ApiOperation(value = "根据id获取新闻内容")
+    @ApiResponses(value = { @ApiResponse(code=404, message = "invalid id")})
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     private Map<String,Object> getAppNewsById(@PathVariable("id")String id){
         Map<String,Object> responseMap = new LinkedHashMap<>();
-        try{
+        AppNews appNews = appNewsRepository.findOne(id);
+        if(null != appNews){
             responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,appNewsRepository.findOne(id));
-        }catch (DataRetrievalFailureException e){
+            responseMap.put(ServerContext.MSG, "");
+            responseMap.put(ServerContext.DATA, appNews);
+        }else{
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG,e.getMessage());
+            responseMap.put(ServerContext.MSG,"invalid id");
             responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
@@ -86,7 +103,34 @@ public class AppNewsController {
     private Map<String, Object> post(@RequestBody AppNews appNews){
         Map<String,Object> responseMap = new LinkedHashMap<>();
 
+        // 根据appNews的时间创建对应时间的文件夹，并创建以当前时间命名的html文件，
+        // 把appNews的content内容写入html，设置appNews的content内容为html的url
+        List<String> htmlContent = new ArrayList<>();
+        htmlContent.add("<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "\t<meta charset=\"UTF-8\">\n" +
+                "\t<title>Document</title>\n" +
+                "</head>\n" +
+                "<body>");
+        htmlContent.add(appNews.getContent());
+        htmlContent.add("</body>\n" +
+                "</html>");
+
         try{
+            Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int date = calendar.get(Calendar.DATE);
+            SimpleDateFormat format = new SimpleDateFormat("HHmmss");
+            String htmlDir = ROOT + "/" + year + "/" + month + "/" + date + "/";
+            String htmlUrl = htmlDir + format.format(System.currentTimeMillis())+".html";
+            if (!Files.exists(Paths.get(htmlDir))){
+                Files.createDirectories(Paths.get(htmlDir));
+                Files.createFile(Paths.get(htmlUrl));
+            }
+            Files.write(Paths.get(htmlUrl), htmlContent, Charset.forName("UTF-8"));
+            appNews.setContent(htmlUrl);
             appNewsRepository.insert(appNews);
             responseMap.put(ServerContext.STATUS_CODE,201);
             responseMap.put(ServerContext.MSG,"");
@@ -105,6 +149,21 @@ public class AppNewsController {
     private Map<String, Object> update(@RequestBody AppNews appNews){
         Map<String,Object> responseMap = new LinkedHashMap<>();
         try{
+            AppNews oldNews = appNewsRepository.findById(appNews.getId());
+            String htmlUrl = oldNews.getContent();
+            List<String> htmlContent = new ArrayList<>();
+            htmlContent.add("<!DOCTYPE html>\n" +
+                    "<html lang=\"en\">\n" +
+                    "<head>\n" +
+                    "\t<meta charset=\"UTF-8\">\n" +
+                    "\t<title>Document</title>\n" +
+                    "</head>\n" +
+                    "<body>");
+            htmlContent.add(appNews.getContent());//新的新闻内容
+            htmlContent.add("</body>\n" +
+                    "</html>");
+            Files.write(Paths.get(htmlUrl), htmlContent, Charset.forName("UTF-8"));
+            appNews.setContent(htmlUrl);
             appNewsRepository.save(appNews);
             responseMap.put(ServerContext.STATUS_CODE,200);
             responseMap.put(ServerContext.MSG,"");
