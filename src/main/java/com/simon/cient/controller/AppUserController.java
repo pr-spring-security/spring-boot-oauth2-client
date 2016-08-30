@@ -37,7 +37,7 @@ public class AppUserController {
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, e.getMessage());
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }
         return responseMap;
     }
@@ -51,11 +51,11 @@ public class AppUserController {
             appUserRepository.insert(appUser);
             responseMap.put(ServerContext.STATUS_CODE, 201);
             responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }catch (DataIntegrityViolationException e){
             responseMap.put(ServerContext.STATUS_CODE, 409);
             responseMap.put(ServerContext.MSG, e.getMessage());
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }
         return responseMap;
     }
@@ -75,7 +75,7 @@ public class AppUserController {
         }catch (DataIntegrityViolationException e){
             responseMap.put(ServerContext.STATUS_CODE, 400);
             responseMap.put(ServerContext.MSG, e.getMessage());
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }
         return responseMap;
     }

@@ -49,7 +49,7 @@ public class OauthUserController {
         } catch (DataRetrievalFailureException e) {
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "username or password is incorrect.");
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }
         return responseMap;
     }
@@ -67,12 +67,12 @@ public class OauthUserController {
             if (result1 > 0 & result2 > 0) {
                 responseMap.put(ServerContext.STATUS_CODE, 201);//201 (Created)
                 responseMap.put(ServerContext.MSG, "register success");
-                responseMap.put(ServerContext.DATA, "");
+//                responseMap.put(ServerContext.DATA, "");
             }
         } catch (DataIntegrityViolationException e) {
             responseMap.put(ServerContext.STATUS_CODE, 409);
             responseMap.put(ServerContext.MSG, "user exists");
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }
 
         return responseMap;

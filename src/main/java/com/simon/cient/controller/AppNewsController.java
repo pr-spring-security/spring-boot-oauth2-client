@@ -57,7 +57,7 @@ public class AppNewsController {
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,e.getMessage());
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
 
         return responseMap;
@@ -76,7 +76,7 @@ public class AppNewsController {
         }else{
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,"invalid id");
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
     }
@@ -93,7 +93,7 @@ public class AppNewsController {
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "there is no records that news_id is "+newsId);
-            responseMap.put(ServerContext.DATA, "");
+//            responseMap.put(ServerContext.DATA, "");
         }
         return responseMap;
     }
@@ -134,11 +134,11 @@ public class AppNewsController {
             appNewsRepository.insert(appNews);
             responseMap.put(ServerContext.STATUS_CODE,201);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE,409);
             responseMap.put(ServerContext.MSG,e.getMessage());
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
 
         return responseMap;
@@ -167,11 +167,11 @@ public class AppNewsController {
             appNewsRepository.save(appNews);
             responseMap.put(ServerContext.STATUS_CODE,200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE,409);
             responseMap.put(ServerContext.MSG,e.getMessage());
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
     }
@@ -184,11 +184,11 @@ public class AppNewsController {
             appNewsRepository.delete(id);
             responseMap.put(ServerContext.STATUS_CODE,200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE,404);
             responseMap.put(ServerContext.MSG,"there is no record that id is "+id);
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
     }
@@ -202,11 +202,11 @@ public class AppNewsController {
             newsCommentRepository.save(newsComment);
             responseMap.put(ServerContext.STATUS_CODE,201);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }catch (DataIntegrityViolationException e){
             responseMap.put(ServerContext.STATUS_CODE,409);
             responseMap.put(ServerContext.MSG, e.getMessage());
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
     }
@@ -229,7 +229,7 @@ public class AppNewsController {
         }catch (DataIntegrityViolationException e){
             responseMap.put(ServerContext.STATUS_CODE,404);
             responseMap.put(ServerContext.MSG, e.getMessage());
-            responseMap.put(ServerContext.DATA,"");
+//            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
     }
