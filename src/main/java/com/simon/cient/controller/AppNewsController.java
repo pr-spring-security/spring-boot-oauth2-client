@@ -35,8 +35,6 @@ public class AppNewsController {
     private AppNewsRepository appNewsRepository;
     @Autowired
     private NewsCommentRepository newsCommentRepository;
-    @Autowired
-    private SimpleNewsRepository simpleNewsRepository;
 
     private final ResourceLoader resourceLoader;
 
@@ -55,7 +53,7 @@ public class AppNewsController {
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,simpleNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))).getContent());
+            responseMap.put(ServerContext.DATA,appNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))).getContent());
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,e.getMessage());
