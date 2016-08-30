@@ -22,6 +22,8 @@ public class SimpleNews {
     @Field("pic_desc")
     private String picDesc;
 
+    private String content;
+
     public String getId() {
         return id;
     }
@@ -60,5 +62,13 @@ public class SimpleNews {
 
     public void setPicDesc(String picDesc) {
         this.picDesc = picDesc;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }

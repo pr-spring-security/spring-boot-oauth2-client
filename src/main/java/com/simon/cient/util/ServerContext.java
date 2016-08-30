@@ -8,4 +8,6 @@ public class ServerContext {
     public static final String STATUS_CODE = "code";
     public static final String DATA = "data";
     public static final String USER_INFO = "userInfo";
+    public static final String DEV_MSG = "developerMessage";
+    public static final String MORE_INFO = "moreInfo";
 }

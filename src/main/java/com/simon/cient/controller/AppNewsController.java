@@ -13,6 +13,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.Charset;
@@ -53,7 +55,7 @@ public class AppNewsController {
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,simpleNewsRepository.findAll(new PageRequest(offset/limit+1, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))).getContent());
+            responseMap.put(ServerContext.DATA,simpleNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))).getContent());
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,e.getMessage());
@@ -89,7 +91,7 @@ public class AppNewsController {
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit+1, limit, new Sort(Sort.Direction.ASC, "pointPraise"))).getContent());
+            responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "pointPraise"))).getContent());
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "there is no records that news_id is "+newsId);
@@ -120,7 +122,7 @@ public class AppNewsController {
         try{
             Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH);
+            int month = calendar.get(Calendar.MONTH)+1;//月份是从0开始的
             int date = calendar.get(Calendar.DATE);
             SimpleDateFormat format = new SimpleDateFormat("HHmmss");
             String htmlDir = ROOT + "/" + year + "/" + month + "/" + date + "/";
@@ -232,5 +234,21 @@ public class AppNewsController {
 //            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
+    }
+
+    @ApiOperation(value = "获取新闻网页内容")
+    @RequestMapping(value = "/{baseFolder}/{year}/{month}/{date}/{htmlName:.+}", method = RequestMethod.GET)
+    @ResponseBody
+    private ResponseEntity<?> getHtmlContent(@PathVariable("baseFolder")String baseFolder,
+                                             @PathVariable("year")Integer year,
+                                             @PathVariable("month")Integer month,
+                                             @PathVariable("date")Integer date,
+                                             @PathVariable("htmlName")String htmlName){
+        String root = baseFolder+"/"+year+"/"+month+"/"+date;
+        try{
+            return ResponseEntity.ok(resourceLoader.getResource("file:" + Paths.get(root, htmlName).toString()));
+        }catch (Exception e){
+            return ResponseEntity.notFound().build();
+        }
     }
 }
