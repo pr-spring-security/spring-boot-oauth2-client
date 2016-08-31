@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @Api(value = "活动")
 @RestController
-@RequestMapping("/events")
+@RequestMapping("/api/events")
 public class OrgEventController {
     @Autowired
     private OrgEventRepository orgEventRepository;
@@ -37,7 +37,7 @@ public class OrgEventController {
 
     @ApiOperation(value = "发布活动", notes = "海报图片采用base64编码成字符串存储")
     @RequestMapping(method = RequestMethod.POST)
-    public Map<String, Object> post(@RequestBody OrgEvent orgEvent){
+    private Map<String, Object> post(@RequestBody OrgEvent orgEvent){
         Map<String, Object> responseMap = new LinkedHashMap<>();
 
         try{

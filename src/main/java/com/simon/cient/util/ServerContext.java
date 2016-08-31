@@ -5,7 +5,7 @@ package com.simon.cient.util;
  */
 public class ServerContext {
     public static final String MSG = "message";
-    public static final String STATUS_CODE = "code";
+    public static final String STATUS_CODE = "status";
     public static final String DATA = "data";
     public static final String USER_INFO = "userInfo";
     public static final String DEV_MSG = "developerMessage";
