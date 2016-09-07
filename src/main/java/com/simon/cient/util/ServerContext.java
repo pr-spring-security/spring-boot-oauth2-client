@@ -10,4 +10,5 @@ public class ServerContext {
     public static final String USER_INFO = "userInfo";
     public static final String DEV_MSG = "developerMessage";
     public static final String MORE_INFO = "moreInfo";
+    public static final String IP="120.25.152.172";
 }

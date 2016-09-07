@@ -12,6 +12,8 @@ public class Carousel {
     @Id
     private String id;
 
+    private String title;
+
     @Field("img_desc")
     private String imgDesc;
 
@@ -28,6 +30,14 @@ public class Carousel {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getImgDesc() {

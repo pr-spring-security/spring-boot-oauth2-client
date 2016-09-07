@@ -33,15 +33,15 @@ public class OauthUserController {
     AppUserRepository appUserRepository;
 
     @ApiOperation(value = "登录", notes = "this is notes", httpMethod = "GET")
-    @RequestMapping(value = "/{username}/{password}", method = RequestMethod.GET)
-    private Map<String, Object> get(@PathVariable("username")String username,
+    @RequestMapping(value = "/{phone}/{password}", method = RequestMethod.GET)
+    private Map<String, Object> get(@PathVariable("phone")String phone,
                                     @PathVariable("password")String password) {
         Map<String, Object> responseMap = new LinkedHashMap<>();
         Map<String, Object> dataMap = new LinkedHashMap<>();
 
         try {
-            OauthUser oauthUser = findOauthUserByUsername(username,password);
-            AppUser appUser = appUserRepository.findByUsername(username);
+            OauthUser oauthUser = findOauthUserByUsername(phone,password);
+            AppUser appUser = appUserRepository.findByPhone(phone);
             dataMap.put(ServerContext.USER_INFO, appUser);
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "");
@@ -54,20 +54,26 @@ public class OauthUserController {
         return responseMap;
     }
 
-    @ApiOperation(value = "注册", notes = "this is notes", httpMethod = "POST")
+    @ApiOperation(value = "注册", notes = "注册成功返回appUser对象，包含自动生成的username", httpMethod = "POST")
     @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(@RequestParam String username, @RequestParam String password) {
+    private Map<String, Object> post(@RequestParam String phone, @RequestParam String password) {
         Map<String, Object> responseMap = new LinkedHashMap<>();
         //判断username是否存在
         try {
             int result1 = jdbcTemplate.update("INSERT INTO users (username,password,enabled) VALUES (?, ?, ?)",
-                    username, password, true);
+                    phone, password, true);
             int result2 = jdbcTemplate.update("INSERT INTO authorities (username, authority) VALUES (?, ?)",
-                    username, "ROLE_APP");
-            if (result1 > 0 & result2 > 0) {
+                    phone, "ROLE_APP");
+
+            AppUser appUser = new AppUser();
+            String name = "sc"+Long.toString(System.currentTimeMillis()/1000, 26);
+            appUser.setUsername(name);
+            appUser.setPhone(phone);
+
+            if (result1 > 0 && result2 > 0 && null!=appUserRepository.insert(appUser)) {
                 responseMap.put(ServerContext.STATUS_CODE, 201);//201 (Created)
                 responseMap.put(ServerContext.MSG, "register success");
-//                responseMap.put(ServerContext.DATA, "");
+                responseMap.put(ServerContext.DATA, appUserRepository.findByUsername(name));
             }
         } catch (DataIntegrityViolationException e) {
             responseMap.put(ServerContext.STATUS_CODE, 409);

@@ -2,7 +2,6 @@ package com.simon.cient.controller;
 
 import com.simon.cient.domain.*;
 import com.simon.cient.util.ServerContext;
-import com.simon.cient.util.UserUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -15,7 +14,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.Charset;
@@ -33,6 +32,8 @@ import java.util.*;
 public class AppNewsController {
 
     @Autowired
+    private AppUserRepository appUserRepository;
+    @Autowired
     private AppNewsRepository appNewsRepository;
     @Autowired
     private NewsCommentRepository newsCommentRepository;
@@ -44,6 +45,9 @@ public class AppNewsController {
     private final ResourceLoader resourceLoader;
 
     private static final String ROOT = "news";
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     public AppNewsController(ResourceLoader resourceLoader) {
@@ -58,7 +62,7 @@ public class AppNewsController {
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,appNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "lastEditTime"))).getContent());
+            responseMap.put(ServerContext.DATA,appNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "lastEditTime"))).getContent());
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,e.getMessage());
@@ -75,9 +79,9 @@ public class AppNewsController {
                                               @RequestParam String access_token){
         Map<String,Object> responseMap = new LinkedHashMap<>();
         Map<String,Object> dataMap = new LinkedHashMap<>();
-        String username = UserUtil.getInstance().getUsernameByAccessToken(access_token);
+        String phone = getPhoneByAccessToken(access_token);
 
-        NewsPraise newsPraise = newsPraiseRepository.findByNewsIdAndUsername(id, username);
+        NewsPraise newsPraise = newsPraiseRepository.findByNewsIdAndUsername(id, phone);
         if (null != newsPraise){
             dataMap.put("newsPraise", newsPraise);
         }
@@ -104,7 +108,7 @@ public class AppNewsController {
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "pointPraise"))).getContent());
+            responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "pointPraise"))).getContent());
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "there is no records that news_id is "+newsId);
@@ -213,7 +217,7 @@ public class AppNewsController {
     private Map<String, Object> insertComment(@PathVariable("id")String newsId, @RequestParam String access_token, @RequestBody NewsComment newsComment){
         Map<String,Object> responseMap = new LinkedHashMap<>();
         newsComment.setNewsId(newsId);
-        newsComment.setUsername(UserUtil.getInstance().getUsernameByAccessToken(access_token));
+        newsComment.setUsername(getPhoneByAccessToken(access_token));
         try{
             newsCommentRepository.save(newsComment);
             responseMap.put(ServerContext.STATUS_CODE,201);
@@ -235,8 +239,8 @@ public class AppNewsController {
             @RequestParam String access_token){
         Map<String,Object> responseMap = new LinkedHashMap<>();
         try{
-            String username = UserUtil.getInstance().getUsernameByAccessToken(access_token);
-            CommentPraise commentPraiseFind = commentPraiseRepository.findByNewsIdAndCommentIdAndUsername(newsId, commentId, username);
+            String phone = getPhoneByAccessToken(access_token);
+            CommentPraise commentPraiseFind = commentPraiseRepository.findByNewsIdAndCommentIdAndUsername(newsId, commentId, phone);
             if (null != commentPraiseFind){
                 if(commentPraiseFind.getStatus()){
                     responseMap.put(ServerContext.STATUS_CODE,200);
@@ -253,7 +257,7 @@ public class AppNewsController {
                 CommentPraise commentPraise = new CommentPraise();
                 commentPraise.setNewsId(newsId);
                 commentPraise.setCommentId(commentId);
-                commentPraise.setUsername(username);
+                commentPraise.setUsername(phone);
                 commentPraise.setStatus(true);
                 commentPraiseRepository.insert(commentPraise);
 
@@ -298,8 +302,9 @@ public class AppNewsController {
         Map<String,Object> responseMap = new LinkedHashMap<>();
 
         try {
-            String username = UserUtil.getInstance().getUsernameByAccessToken(access_token);
-            NewsPraise newsPraiseFind = newsPraiseRepository.findByNewsIdAndUsername(newsId, access_token);
+            String phone = getPhoneByAccessToken(access_token);
+
+            NewsPraise newsPraiseFind = newsPraiseRepository.findByNewsIdAndUsername(newsId, phone);
 
             if(null != newsPraiseFind){
                 if (newsPraiseFind.getStatus()){
@@ -323,7 +328,7 @@ public class AppNewsController {
             }else{
                 NewsPraise newsPraise = new NewsPraise();
                 newsPraise.setNewsId(newsId);
-                newsPraise.setUsername(username);
+                newsPraise.setUsername(phone);
                 newsPraise.setStatus(true);
                 newsPraiseRepository.insert(newsPraise);
 
@@ -364,5 +369,14 @@ public class AppNewsController {
             responseMap.put(ServerContext.DEV_MSG, e.getMessage());
         }
         return responseMap;
+    }
+
+    private String getPhoneByAccessToken(String access_token){
+        /*System.out.println(access_token);
+        if (jdbcTemplate==null){
+            System.out.println("jdbcTemplate is null");
+        }*/
+        return jdbcTemplate.queryForObject("SELECT user_name FROM oauth_access_token" +
+                " WHERE encode(token, 'escape') LIKE CONCAT('%', ?)", new Object[]{access_token}, String.class);
     }
 }
