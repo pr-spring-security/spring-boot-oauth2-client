@@ -1,6 +1,7 @@
 package com.simon.cient.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -25,6 +26,13 @@ public class JoinEvent {
 
     @Field("sign_out_time")
     private Long signOutTime;//签退时间
+
+    @Field("status")
+    private Integer status;//1，已报名；2，进行中；3，已完成
+
+    @DBRef
+    @Field(value = "org_event")
+    private OrgEvent orgEvent;
 
     public String getId() {
         return id;
@@ -80,5 +88,21 @@ public class JoinEvent {
 
     public void setSignOutTime(Long signOutTime) {
         this.signOutTime = signOutTime;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public OrgEvent getOrgEvent() {
+        return orgEvent;
+    }
+
+    public void setOrgEvent(OrgEvent orgEvent) {
+        this.orgEvent = orgEvent;
     }
 }

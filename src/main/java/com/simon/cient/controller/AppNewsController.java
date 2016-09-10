@@ -216,8 +216,12 @@ public class AppNewsController {
     @RequestMapping(value = "/{id}/comments", method = RequestMethod.POST)
     private Map<String, Object> insertComment(@PathVariable("id")String newsId, @RequestParam String access_token, @RequestBody NewsComment newsComment){
         Map<String,Object> responseMap = new LinkedHashMap<>();
+
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser appUser = appUserRepository.findByPhone(phone);
+
         newsComment.setNewsId(newsId);
-        newsComment.setUsername(getPhoneByAccessToken(access_token));
+        newsComment.setUsername(appUser.getUsername());
         try{
             newsCommentRepository.save(newsComment);
             responseMap.put(ServerContext.STATUS_CODE,201);
@@ -240,7 +244,8 @@ public class AppNewsController {
         Map<String,Object> responseMap = new LinkedHashMap<>();
         try{
             String phone = getPhoneByAccessToken(access_token);
-            CommentPraise commentPraiseFind = commentPraiseRepository.findByNewsIdAndCommentIdAndUsername(newsId, commentId, phone);
+            AppUser appUser = appUserRepository.findByPhone(phone);
+            CommentPraise commentPraiseFind = commentPraiseRepository.findByNewsIdAndCommentIdAndUsername(newsId, commentId, appUser.getUsername());
             if (null != commentPraiseFind){
                 if(commentPraiseFind.getStatus()){
                     responseMap.put(ServerContext.STATUS_CODE,200);
@@ -257,7 +262,7 @@ public class AppNewsController {
                 CommentPraise commentPraise = new CommentPraise();
                 commentPraise.setNewsId(newsId);
                 commentPraise.setCommentId(commentId);
-                commentPraise.setUsername(phone);
+                commentPraise.setUsername(appUser.getUsername());
                 commentPraise.setStatus(true);
                 commentPraiseRepository.insert(commentPraise);
 
@@ -304,7 +309,9 @@ public class AppNewsController {
         try {
             String phone = getPhoneByAccessToken(access_token);
 
-            NewsPraise newsPraiseFind = newsPraiseRepository.findByNewsIdAndUsername(newsId, phone);
+            AppUser appUser = appUserRepository.findByPhone(phone);
+
+            NewsPraise newsPraiseFind = newsPraiseRepository.findByNewsIdAndUsername(newsId, appUser.getUsername());
 
             if(null != newsPraiseFind){
                 if (newsPraiseFind.getStatus()){
@@ -328,7 +335,7 @@ public class AppNewsController {
             }else{
                 NewsPraise newsPraise = new NewsPraise();
                 newsPraise.setNewsId(newsId);
-                newsPraise.setUsername(phone);
+                newsPraise.setUsername(appUser.getUsername());
                 newsPraise.setStatus(true);
                 newsPraiseRepository.insert(newsPraise);
 

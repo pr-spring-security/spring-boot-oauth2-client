@@ -1,5 +1,6 @@
 package com.simon.cient.domain;
 
+import io.swagger.models.auth.In;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -30,6 +31,15 @@ public class OrgEvent {
     private String content;
 
     private String poster;
+
+    @Field("sign_up_count")
+    private Integer signUpCount;
+
+    @Field("sign_in_count")
+    private Integer signInCount;
+
+    @Field("sign_out_count")
+    private Integer signOutCount;
 
     public String getId() {
         return id;
@@ -110,5 +120,29 @@ public class OrgEvent {
 
     public void setPoster(String poster) {
         this.poster = poster;
+    }
+
+    public Integer getSignUpCount() {
+        return signUpCount;
+    }
+
+    public void setSignUpCount(Integer signUpCount) {
+        this.signUpCount = signUpCount;
+    }
+
+    public Integer getSignInCount() {
+        return signInCount;
+    }
+
+    public void setSignInCount(Integer signInCount) {
+        this.signInCount = signInCount;
+    }
+
+    public Integer getSignOutCount() {
+        return signOutCount;
+    }
+
+    public void setSignOutCount(Integer signOutCount) {
+        this.signOutCount = signOutCount;
     }
 }

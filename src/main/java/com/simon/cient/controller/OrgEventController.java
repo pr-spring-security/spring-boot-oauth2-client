@@ -1,5 +1,7 @@
 package com.simon.cient.controller;
 
+import com.simon.cient.domain.AppUser;
+import com.simon.cient.domain.AppUserRepository;
 import com.simon.cient.domain.OrgEvent;
 import com.simon.cient.domain.OrgEventRepository;
 import com.simon.cient.util.ImageUtil;
@@ -13,6 +15,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import sun.misc.BASE64Decoder;
 
@@ -31,6 +34,12 @@ import java.util.Map;
 @RequestMapping("/api/events")
 public class OrgEventController {
     @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private AppUserRepository appUserRepository;
+
+    @Autowired
     private OrgEventRepository orgEventRepository;
 
     private final ResourceLoader resourceLoader;
@@ -42,10 +51,16 @@ public class OrgEventController {
         this.resourceLoader = resourceLoader;
     }
 
-    @ApiOperation(value = "发布活动", notes = "海报图片采用base64编码成字符串上传，服务端生成png，存储为url")
+    @ApiOperation(value = "发布活动", notes = "海报图片采用base64编码成字符串上传，服务端生成png，存储为url；publisher传空即可")
     @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(@RequestBody OrgEvent orgEvent){
+    private Map<String, Object> post(@RequestParam String access_token, @RequestBody OrgEvent orgEvent){
         Map<String, Object> responseMap = new LinkedHashMap<>();
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser appUser = appUserRepository.findByPhone(phone);
+        orgEvent.setPublisher(appUser.getUsername());
+        orgEvent.setSignInCount(0);
+        orgEvent.setSignUpCount(0);
+        orgEvent.setSignOutCount(0);
 
         try{
             //将base64字符串转换成图片，poster存图片url
@@ -85,7 +100,7 @@ public class OrgEventController {
         return responseMap;
     }
 
-    @ApiOperation("获取活动详情")
+    @ApiOperation("获取活动列表")
     @RequestMapping(method = RequestMethod.GET)
     public Map<String, Object> get(@RequestParam Integer limit, @RequestParam Integer offset){
         Map<String, Object> responseMap = new LinkedHashMap<>();
@@ -101,10 +116,51 @@ public class OrgEventController {
         return responseMap;
     }
 
-    @ApiOperation("修改活动内容")
-    @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    public Map<String, Object> patch(@PathVariable("id")String id,@RequestBody OrgEvent orgEvent){
+    @ApiOperation("获取用户发布的活动列表")
+    @RequestMapping(value = "/getByPublisher", method = RequestMethod.GET)
+    public Map<String, Object> getByPublisher(@RequestParam String access_token, @RequestParam Integer limit, @RequestParam Integer offset){
         Map<String, Object> responseMap = new LinkedHashMap<>();
+
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser appUser = appUserRepository.findByPhone(phone);
+
+        try{
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "");
+            responseMap.put(ServerContext.DATA, orgEventRepository.findByPublisher(appUser.getUsername(), new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "publishTime"))));
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "获取活动失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+        return responseMap;
+    }
+
+    @RequestMapping(value = "/hot", method = RequestMethod.GET)
+    private Map<String, Object> getHotEvent(){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+
+        try {
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "获取推荐活动成功");
+            responseMap.put(ServerContext.DATA, orgEventRepository.findAll(new PageRequest(1, 4, new Sort(Sort.Direction.ASC, "publishTime"))));
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "获取推荐活动失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+        return responseMap;
+    }
+
+    @ApiOperation(value = "修改活动内容", notes = "OrgEvent的publisher不用传")
+    @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
+    public Map<String, Object> patch(@PathVariable("id")String id,@RequestBody OrgEvent orgEvent, @RequestParam String access_token){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser appUser = appUserRepository.findByPhone(phone);
+        orgEvent.setPublisher(appUser.getUsername());
+
         try{
             OrgEvent orgEventOld = orgEventRepository.findById(id);
             byte[] imgBytes = ImageUtil.convertToBytes(orgEvent.getPoster());
@@ -169,6 +225,11 @@ public class OrgEventController {
         }catch (Exception e){
             return ResponseEntity.notFound().build();
         }
+    }
+
+    private String getPhoneByAccessToken(String access_token){
+        return jdbcTemplate.queryForObject("SELECT user_name FROM oauth_access_token" +
+                " WHERE encode(token, 'escape') LIKE CONCAT('%', ?)", new Object[]{access_token}, String.class);
     }
 
 }
