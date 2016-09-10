@@ -12,4 +12,5 @@ public interface JoinEventRepository extends MongoRepository<JoinEvent, String> 
     JoinEvent findByEventIdAndPhone(String eventId, String phone);
     Integer countByPhone(String phone);
     List<JoinEvent> findByPhoneAndStatus(String phone, Integer status, Pageable pageable);
+    List<JoinEvent> getByPhoneAndStatus(String phone, Integer status);
 }
