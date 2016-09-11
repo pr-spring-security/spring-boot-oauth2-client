@@ -43,6 +43,7 @@ public class AppUserController {
             PersonInfo personInfo = new PersonInfo();
             personInfo.setAppUser(appUser);
 
+            personInfo.setSignUpCount(joinEventRepository.countByPhone(phone));
             List<JoinEvent> joinEventList = joinEventRepository.getByPhoneAndStatus(phone, ServerContext.SIGN_OUT_STATUS);
             personInfo.setJoinCount(joinEventList.size());
 

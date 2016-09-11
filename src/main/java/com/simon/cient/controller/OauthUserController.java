@@ -66,7 +66,8 @@ public class OauthUserController {
                     phone, "ROLE_APP");
 
             AppUser appUser = new AppUser();
-            String name = "sc"+Long.toString(System.currentTimeMillis()/1000, 26);
+            //String name = "sc"+Long.toString(System.currentTimeMillis()/1000, 26);
+            String name = "starchild"+phone.substring(phone.length()-4);
             appUser.setUsername(name);
             appUser.setPhone(phone);
 

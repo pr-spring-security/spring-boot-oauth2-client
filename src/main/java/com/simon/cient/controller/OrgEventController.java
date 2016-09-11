@@ -143,7 +143,7 @@ public class OrgEventController {
         try {
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "获取推荐活动成功");
-            responseMap.put(ServerContext.DATA, orgEventRepository.findAll(new PageRequest(1, 4, new Sort(Sort.Direction.ASC, "publishTime"))));
+            responseMap.put(ServerContext.DATA, orgEventRepository.findAll(new PageRequest(1, 4, new Sort(Sort.Direction.ASC, "publishTime"))).getContent());
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "获取推荐活动失败");
