@@ -60,9 +60,13 @@ public class AppNewsController {
         Map<String,Object> responseMap = new LinkedHashMap<>();
 
         try{
+            List<AppNews> appNewsList = appNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "lastEditTime"))).getContent();
+            for (AppNews appNews : appNewsList){
+                appNews.setEditor(appUserRepository.findById(appNews.getEditorId()));
+            }
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG,"");
-            responseMap.put(ServerContext.DATA,appNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "lastEditTime"))).getContent());
+            responseMap.put(ServerContext.DATA,appNewsList);
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG,e.getMessage());
@@ -88,13 +92,14 @@ public class AppNewsController {
 
         AppNews appNews = appNewsRepository.findOne(id);
         if(null != appNews){
+            appNews.setEditor(appUserRepository.findById(appNews.getEditorId()));
             dataMap.put("appNews", appNews);
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "获取新闻成功");
             responseMap.put(ServerContext.DATA, dataMap);
         }else{
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG,"invalid id");
+            responseMap.put(ServerContext.MSG,"id不存在");
 //            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
@@ -107,7 +112,7 @@ public class AppNewsController {
         Map<String, Object> responseMap = new LinkedHashMap<>();
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "");
+            responseMap.put(ServerContext.MSG, "获取评论列表成功");
             responseMap.put(ServerContext.DATA,newsCommentRepository.findByNewsId(newsId, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "pointPraise"))).getContent());
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
@@ -117,10 +122,15 @@ public class AppNewsController {
         return responseMap;
     }
 
-    @ApiOperation(value="插入一条新闻")
+    /*@ApiOperation(value="插入一条新闻", notes = "不需要传editorId和editor")
     @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(@RequestBody AppNews appNews){
+    private Map<String, Object> post(@RequestBody AppNews appNews, @RequestParam String access_token){
         Map<String,Object> responseMap = new LinkedHashMap<>();
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser editor = appUserRepository.findByPhone(phone);
+
+        appNews.setEditorId(editor.getId());
+        appNews.setEditor(editor);
 
         // 根据appNews的时间创建对应时间的文件夹，并创建以当前时间命名的html文件，
         // 把appNews的content内容写入html，设置appNews的content内容为html的url
@@ -161,12 +171,19 @@ public class AppNewsController {
         }
 
         return responseMap;
-    }
+    }*/
 
-    @ApiOperation(value="更新一条新闻")
+    /*@ApiOperation(value="更新一条新闻")
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    private Map<String, Object> update(@RequestBody AppNews appNews){
+    private Map<String, Object> update(@RequestBody AppNews appNews, @RequestParam String access_token){
         Map<String,Object> responseMap = new LinkedHashMap<>();
+
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser editor = appUserRepository.findByPhone(phone);
+
+        appNews.setEditorId(editor.getId());
+        appNews.setEditor(editor);
+
         try{
             AppNews oldNews = appNewsRepository.findById(appNews.getId());
             String htmlUrl = oldNews.getContent();
@@ -193,9 +210,9 @@ public class AppNewsController {
 //            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
-    }
+    }*/
 
-    @ApiOperation(value="删除一条新闻")
+    /*@ApiOperation(value="删除一条新闻")
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     private Map<String, Object> delete(@PathVariable("id") String id){
         Map<String,Object> responseMap = new LinkedHashMap<>();
@@ -210,7 +227,7 @@ public class AppNewsController {
 //            responseMap.put(ServerContext.DATA,"");
         }
         return responseMap;
-    }
+    }*/
 
     @ApiOperation(value = "插入一条评论", notes = "不需要传username，username是通过access_token获得的")
     @RequestMapping(value = "/{id}/comments", method = RequestMethod.POST)
@@ -328,6 +345,8 @@ public class AppNewsController {
                     appNews.setPointPraise(pointPraise);
                     appNewsRepository.save(appNews);
 
+                    appNews.setEditor(appUserRepository.findById(appNews.getEditorId()));
+
                     responseMap.put(ServerContext.STATUS_CODE,200);
                     responseMap.put(ServerContext.MSG,"点赞成功");
                     responseMap.put(ServerContext.DATA,appNewsRepository.findById(newsId));
@@ -366,6 +385,7 @@ public class AppNewsController {
             Integer share = appNews.getShare();
             share+=1;
             appNews.setShare(share);
+            appNews.setEditor(appUserRepository.findById(appNews.getEditorId()));
             appNewsRepository.save(appNews);
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "分享成功");

@@ -1,5 +1,6 @@
 package com.simon.cient.controller;
 
+import com.simon.cient.domain.AppNews;
 import com.simon.cient.domain.AppUser;
 import com.simon.cient.domain.AppUserRepository;
 import com.simon.cient.domain.jdbc.OauthUser;
@@ -85,6 +86,25 @@ public class OauthUserController {
         return responseMap;
     }
 
+    @ApiOperation(value = "更新密码", notes = "目前密码是明文存储，正式发布前需要做加密")
+    @RequestMapping(value = "/updatePassword/{oldPassword}/{newPassword}", method = RequestMethod.PATCH)
+    private Map<String, Object> updatePassword(@RequestParam String access_token, @PathVariable String oldPassword,@PathVariable String newPassword){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+        String phone = getPhoneByAccessToken(access_token);
+
+        try{
+            this.jdbcTemplate.update("UPDATE users SET password = ? WHERE username = ?", newPassword, phone);
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "更新密码成功");
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "更新密码失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+
+        return responseMap;
+    }
+
     public OauthUser findOauthUserByUsername(String username, String password) {
         return jdbcTemplate.queryForObject(
                 "SELECT username,password,enabled FROM users where username=? AND password=?",
@@ -98,5 +118,10 @@ public class OauthUserController {
                         return oauthUser;
                     }
                 });
+    }
+
+    private String getPhoneByAccessToken(String access_token){
+        return jdbcTemplate.queryForObject("SELECT user_name FROM oauth_access_token" +
+                " WHERE encode(token, 'escape') LIKE CONCAT('%', ?)", new Object[]{access_token}, String.class);
     }
 }

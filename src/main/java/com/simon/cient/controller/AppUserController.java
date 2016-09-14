@@ -5,11 +5,15 @@ import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,16 @@ public class AppUserController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private final ResourceLoader resourceLoader;
+
+    private static final String ROOT = "appUsers";
+
+    @Autowired
+    public AppUserController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+
+    @ApiOperation(value = "\"我的\"模块访问的接口")
     @RequestMapping(value = "/personInfo", method = RequestMethod.GET)
     private Map<String, Object> getPersonInfo(@RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
@@ -70,55 +84,53 @@ public class AppUserController {
     }
 
     @ApiOperation(value="获取用户信息")
-    @RequestMapping(value = "/{username}",method = RequestMethod.GET)
-    private Map<String, Object> get(@PathVariable("username")String username){
+    @RequestMapping(value = "",method = RequestMethod.GET)
+    private Map<String, Object> get(@RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
+        String phone = getPhoneByAccessToken(access_token);
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA, appUserRepository.findByUsername(username));
+            responseMap.put(ServerContext.MSG, "获取用户信息成功");
+            responseMap.put(ServerContext.DATA, appUserRepository.findByPhone(phone));
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG, e.getMessage());
-//            responseMap.put(ServerContext.DATA, "");
+            responseMap.put(ServerContext.MSG, "获取用户信息失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
         }
         return responseMap;
     }
 
-
-    @ApiOperation(value = "添加用户信息")
-    @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(AppUser appUser){
+    @ApiOperation(value = "更新头像")
+    @RequestMapping(value = "/updateHeadPhoto", method = RequestMethod.PATCH)
+    private Map<String, Object> updateHeadPhoto(@RequestParam String access_token, @RequestParam String photoBase64){
         Map<String, Object> responseMap = new LinkedHashMap<>();
-        try{
-            appUserRepository.insert(appUser);
-            responseMap.put(ServerContext.STATUS_CODE, 201);
-            responseMap.put(ServerContext.MSG, "");
-//            responseMap.put(ServerContext.DATA, "");
-        }catch (DataIntegrityViolationException e){
-            responseMap.put(ServerContext.STATUS_CODE, 409);
-            responseMap.put(ServerContext.MSG, e.getMessage());
-//            responseMap.put(ServerContext.DATA, "");
-        }
-        return responseMap;
-    }
-
-    @ApiOperation(value = "修改用户信息", notes = "修改成功，在data里返回了修改后的用户信息")
-    @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    private Map<String, Object> patch(@PathVariable("id")String id, AppUser appUser){
-        Map<String, Object> responseMap = new LinkedHashMap<>();
-        Map<String, Object> dataMap = new LinkedHashMap<>();
-        try{
-            appUser.setId(id);
-            appUserRepository.save(appUser);
-            responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "");
-            dataMap.put(ServerContext.USER_INFO, appUserRepository.findOne(id));
-            responseMap.put(ServerContext.DATA, dataMap);
-        }catch (DataIntegrityViolationException e){
-            responseMap.put(ServerContext.STATUS_CODE, 400);
-            responseMap.put(ServerContext.MSG, e.getMessage());
-//            responseMap.put(ServerContext.DATA, "");
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser appUser = appUserRepository.findByPhone(phone);
+        String headPhotoUrl = appUser.getHeadPhoto();
+        if (null==headPhotoUrl||"".equals(headPhotoUrl)){
+            headPhotoUrl = ROOT+"/"+appUser.getPhone() + "/" + appUser.getPhone() + ".png";
+            String headPhotoDir = ROOT + "/" + appUser.getPhone();
+            try{
+                if (!Files.exists(Paths.get(headPhotoUrl))){
+                    if (!Files.exists(Paths.get(headPhotoDir))){
+                        Files.createDirectories(Paths.get(headPhotoDir));
+                    }
+                    Files.createFile(Paths.get(headPhotoUrl));
+                }
+                Files.write(Paths.get(headPhotoUrl), photoBase64.getBytes());
+                appUser.setHeadPhoto(headPhotoUrl);
+                responseMap.put(ServerContext.STATUS_CODE, 200);
+                responseMap.put(ServerContext.MSG, "更新头像成功");
+                responseMap.put(ServerContext.DATA, appUserRepository.save(appUser));
+            }catch (IOException e){
+                responseMap.put(ServerContext.STATUS_CODE, 404);
+                responseMap.put(ServerContext.MSG, "创建文件夹或者文件失败");
+                responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+            }catch (Exception e){
+                responseMap.put(ServerContext.STATUS_CODE, 500);
+                responseMap.put(ServerContext.MSG, "未知错误");
+                responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+            }
         }
         return responseMap;
     }

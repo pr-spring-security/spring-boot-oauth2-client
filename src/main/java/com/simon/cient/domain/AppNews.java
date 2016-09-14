@@ -1,6 +1,7 @@
 package com.simon.cient.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -13,7 +14,11 @@ public class AppNews {
     @Id
     private String id;
 
-    private String editor;
+    @Field("editor_id")
+    private String editorId;
+
+    @DBRef
+    private AppUser editor;
 
     @Field("last_edit_time")
     private Long lastEditTime;
@@ -39,12 +44,20 @@ public class AppNews {
         this.id = id;
     }
 
-    public String getEditor() {
+    public AppUser getEditor() {
         return editor;
     }
 
-    public void setEditor(String editor) {
+    public void setEditor(AppUser editor) {
         this.editor = editor;
+    }
+
+    public String getEditorId() {
+        return editorId;
+    }
+
+    public void setEditorId(String editorId) {
+        this.editorId = editorId;
     }
 
     public Long getLastEditTime() {

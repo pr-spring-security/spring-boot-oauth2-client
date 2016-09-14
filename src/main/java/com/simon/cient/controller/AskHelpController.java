@@ -9,6 +9,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -55,6 +56,7 @@ public class AskHelpController {
     }
 
     @ApiOperation(value = "审核", notes = "access_token来自审核人")
+    @PreAuthorize("#oauth2.isAdmin()")
     private Map<String, Object> auditHelpInfo(@RequestParam String access_token, @RequestParam String askHelpId, @RequestParam Boolean auditResult){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);

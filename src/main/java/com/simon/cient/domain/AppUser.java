@@ -31,6 +31,8 @@ public class AppUser {
 
     private String address;
 
+    private String email;
+
     public String getId() {
         return id;
     }
@@ -109,5 +111,13 @@ public class AppUser {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
