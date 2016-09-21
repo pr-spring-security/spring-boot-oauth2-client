@@ -24,12 +24,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by simon on 2016/8/30.
  */
-@Api(value = "活动")
+@Api(value = "活动", description = "活动")
 @RestController
 @RequestMapping("/api/events")
 public class OrgEventController {
@@ -51,13 +52,14 @@ public class OrgEventController {
         this.resourceLoader = resourceLoader;
     }
 
-    @ApiOperation(value = "发布活动", notes = "海报图片采用base64编码成字符串上传，服务端生成png，存储为url；publisher传空即可")
+    @ApiOperation(value = "发布活动", notes = "海报图片采用base64编码成字符串上传，服务端生成png，存储为url；orgEvent不需要传publisher和publisherId")
     @RequestMapping(method = RequestMethod.POST)
     private Map<String, Object> post(@RequestParam String access_token, @RequestBody OrgEvent orgEvent){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         AppUser appUser = appUserRepository.findByPhone(phone);
-        orgEvent.setPublisher(appUser.getUsername());
+        orgEvent.setPublisherId(appUser.getId());
+        orgEvent.setPublisher(appUser);
         orgEvent.setSignInCount(0);
         orgEvent.setSignUpCount(0);
         orgEvent.setSignOutCount(0);
@@ -90,7 +92,7 @@ public class OrgEventController {
 
             orgEventRepository.insert(orgEvent);
             responseMap.put(ServerContext.STATUS_CODE, 201);
-            responseMap.put(ServerContext.MSG, "");
+            responseMap.put(ServerContext.MSG, "发布活动成功");
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "发布活动失败");
@@ -106,11 +108,15 @@ public class OrgEventController {
         Map<String, Object> responseMap = new LinkedHashMap<>();
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA, orgEventRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "publishTime"))).getContent());
+            responseMap.put(ServerContext.MSG, "获取活动列表成功");
+            List<OrgEvent> orgEventList = orgEventRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "publishTime"))).getContent();
+            for (OrgEvent orgEvent : orgEventList){
+                orgEvent.setPublisher(appUserRepository.findOne(orgEvent.getPublisherId()));
+            }
+            responseMap.put(ServerContext.DATA, orgEventList);
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG, "获取活动失败");
+            responseMap.put(ServerContext.MSG, "获取活动列表失败");
             responseMap.put(ServerContext.DEV_MSG, e.getMessage());
         }
         return responseMap;
@@ -125,25 +131,37 @@ public class OrgEventController {
         AppUser appUser = appUserRepository.findByPhone(phone);
 
         try{
+            List<OrgEvent>  orgEventList= orgEventRepository.findByPublisherId(
+                    appUser.getId(), new PageRequest(offset/limit, limit,
+                            new Sort(Sort.Direction.ASC, "publishTime")));
+            for (OrgEvent orgEvent : orgEventList){
+                orgEvent.setPublisher(appUserRepository.findById(orgEvent.getPublisherId()));
+            }
             responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "");
-            responseMap.put(ServerContext.DATA, orgEventRepository.findByPublisher(appUser.getUsername(), new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "publishTime"))));
+            responseMap.put(ServerContext.MSG, "获取活动列表成功");
+            responseMap.put(ServerContext.DATA, orgEventList);
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG, "获取活动失败");
+            responseMap.put(ServerContext.MSG, "获取活动列表失败");
             responseMap.put(ServerContext.DEV_MSG, e.getMessage());
         }
         return responseMap;
     }
 
+    @ApiOperation(value="获取热门推荐")
     @RequestMapping(value = "/hot", method = RequestMethod.GET)
     private Map<String, Object> getHotEvent(){
         Map<String, Object> responseMap = new LinkedHashMap<>();
 
         try {
+            List<OrgEvent> orgEventList = orgEventRepository.findAll(
+                    new PageRequest(0, 4, new Sort(Sort.Direction.ASC, "publishTime"))).getContent();
+            for (OrgEvent orgEvent : orgEventList){
+                orgEvent.setPublisher(appUserRepository.findById(orgEvent.getPublisherId()));
+            }
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "获取推荐活动成功");
-            responseMap.put(ServerContext.DATA, orgEventRepository.findAll(new PageRequest(1, 4, new Sort(Sort.Direction.ASC, "publishTime"))).getContent());
+            responseMap.put(ServerContext.DATA, orgEventList);
         }catch (Exception e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "获取推荐活动失败");
@@ -152,14 +170,15 @@ public class OrgEventController {
         return responseMap;
     }
 
-    @ApiOperation(value = "修改活动内容", notes = "OrgEvent的publisher不用传")
+    @ApiOperation(value = "修改活动内容", notes = "OrgEvent的publisher和publisherId不用传")
     @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
     public Map<String, Object> patch(@PathVariable("id")String id,@RequestBody OrgEvent orgEvent, @RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
 
         String phone = getPhoneByAccessToken(access_token);
         AppUser appUser = appUserRepository.findByPhone(phone);
-        orgEvent.setPublisher(appUser.getUsername());
+        orgEvent.setPublisherId(appUser.getId());
+        orgEvent.setPublisher(appUser);
 
         try{
             OrgEvent orgEventOld = orgEventRepository.findById(id);
@@ -189,8 +208,9 @@ public class OrgEventController {
         Map<String, Object> responseMap = new LinkedHashMap<>();
         try {
             OrgEvent orgEvent = orgEventRepository.findById(id);
+            orgEvent.setPublisher(appUserRepository.findById(orgEvent.getPublisherId()));
             responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "");
+            responseMap.put(ServerContext.MSG, "获取活动详情成功");
             responseMap.put(ServerContext.DATA, orgEvent);
         }catch (DataAccessException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
@@ -216,6 +236,7 @@ public class OrgEventController {
         return responseMap;
     }
 
+    @ApiOperation(value="获取活动相关文件")
     @RequestMapping(method = RequestMethod.GET, value = "/posters/{parentDir}/{filename:.+}")
     @ResponseBody
     public ResponseEntity<?> getFile(@PathVariable("parentDir") String parentDir, @PathVariable("filename") String filename){

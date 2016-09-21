@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Created by simon on 2016/8/31.
  */
-@Api("轮播")
+@Api(value = "轮播", description = "轮播")
 @RestController
 @RequestMapping("/api/carousels")
 public class CarouselController {

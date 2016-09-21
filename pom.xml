@@ -80,6 +80,31 @@
 
 		<!-- swagger依赖end -->
 
+		<!-- ali dayu jar start -->
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>dayu</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>dayu-source</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<!-- ali dayu jar end -->
+
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+
+		<dependency>
+			<groupId>cn.jpush.api</groupId>
+			<artifactId>jpush-client</artifactId>
+			<version>3.2.9</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

@@ -2,6 +2,7 @@ package com.simon.cient.domain;
 
 import io.swagger.models.auth.In;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -12,7 +13,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class OrgEvent {
     @Id
     private String id;
-    private String publisher;
+
+    @DBRef(db="app_user")
+    private AppUser publisher;
+
+    @Field("publisher_id")
+    private String publisherId;
 
     @Field("publish_time")
     private Long publishTime;
@@ -49,12 +55,20 @@ public class OrgEvent {
         this.id = id;
     }
 
-    public String getPublisher() {
+    public AppUser getPublisher() {
         return publisher;
     }
 
-    public void setPublisher(String publisher) {
+    public void setPublisher(AppUser publisher) {
         this.publisher = publisher;
+    }
+
+    public String getPublisherId() {
+        return publisherId;
+    }
+
+    public void setPublisherId(String publisherId) {
+        this.publisherId = publisherId;
     }
 
     public Long getPublishTime() {
@@ -64,7 +78,6 @@ public class OrgEvent {
     public void setPublishTime(Long publishTime) {
         this.publishTime = publishTime;
     }
-
 
     public String getTheme() {
         return theme;

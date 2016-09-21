@@ -35,7 +35,7 @@ public class AskHelp {
     private Long auditTime;//审核时间
 
     @Field("audit_result")
-    private Boolean auditResult;
+    private Integer auditResult;
 
     public String getId() {
         return id;
@@ -85,11 +85,11 @@ public class AskHelp {
         this.auditTime = auditTime;
     }
 
-    public Boolean getAuditResult() {
+    public Integer getAuditResult() {
         return auditResult;
     }
 
-    public void setAuditResult(Boolean auditResult) {
+    public void setAuditResult(Integer auditResult) {
         this.auditResult = auditResult;
     }
 

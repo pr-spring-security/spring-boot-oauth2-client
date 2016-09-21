@@ -10,5 +10,5 @@ import java.util.List;
  */
 public interface OrgEventRepository extends MongoRepository<OrgEvent, String>{
     OrgEvent findById(String id);
-    List<OrgEvent> findByPublisher(String publisher, Pageable pageable);
+    List<OrgEvent> findByPublisherId(String publisherId, Pageable pageable);
 }

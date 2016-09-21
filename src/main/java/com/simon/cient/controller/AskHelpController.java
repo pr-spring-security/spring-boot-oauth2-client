@@ -8,17 +8,20 @@ import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by simon on 2016/9/11.
  */
-@Api("请求帮助")
+@Api(value = "请求帮助", description = "请求帮助")
 @RestController
 @RequestMapping("/api/askHelps")
 public class AskHelpController {
@@ -41,6 +44,7 @@ public class AskHelpController {
         askHelp.setPublisher(publisher);
         askHelp.setPublishTime(System.currentTimeMillis());
         askHelp.setContent(content);
+        askHelp.setAuditResult(0);//0，待审核；1，审核成功；2，审核失败；3，重新提交。
 
         try{
             responseMap.put(ServerContext.STATUS_CODE, 201);
@@ -55,9 +59,64 @@ public class AskHelpController {
         return responseMap;
     }
 
-    @ApiOperation(value = "审核", notes = "access_token来自审核人")
+    @ApiOperation(value = "修改求助信息", notes = "id是AskHelp的id")
+    @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
+    private Map<String, Object> patch(@RequestParam String access_token, @PathVariable String id, @RequestParam String content){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser publisher = appUserRepository.findByPhone(phone);
+
+        AskHelp askHelp = new AskHelp();
+        askHelp.setId(id);
+        askHelp.setPublisherId(publisher.getId());
+        askHelp.setPublisher(publisher);
+        askHelp.setPublishTime(System.currentTimeMillis());
+        askHelp.setContent(content);
+        askHelp.setAuditResult(3);//0，待审核；1，审核成功；2，审核失败；3，重新提交。
+
+        try{
+            responseMap.put(ServerContext.STATUS_CODE, 201);
+            responseMap.put(ServerContext.MSG, "重新发布成功");
+            responseMap.put(ServerContext.DATA, askHelpRepository.save(askHelp));
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "重新发布失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+
+        return responseMap;
+    }
+
+    @ApiOperation(value = "获取求助列表")
+    @RequestMapping(method = RequestMethod.GET)
+    private Map<String, Object> get(@RequestParam Integer limit, @RequestParam Integer offset){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+
+        try{
+            //AuditResult:0，待审核；1，审核成功；2，审核失败；3，重新提交。
+            List<AskHelp> askHelpList = askHelpRepository.findByAuditResult(
+                    1, new PageRequest(offset/limit, limit,
+                    new Sort(Sort.Direction.DESC, "publishTime")));
+            for (AskHelp askHelp : askHelpList){
+                askHelp.setPublisher(appUserRepository.findById(askHelp.getPublisherId()));
+                askHelp.setAuditor(appUserRepository.findById(askHelp.getAuditorId()));
+            }
+
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "获取求助列表成功");
+            responseMap.put(ServerContext.DATA, askHelpList);
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "获取求助列表失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+
+        return responseMap;
+    }
+
+    /*@ApiOperation(value = "审核", notes = "access_token来自审核人")
     @PreAuthorize("#oauth2.isAdmin()")
-    private Map<String, Object> auditHelpInfo(@RequestParam String access_token, @RequestParam String askHelpId, @RequestParam Boolean auditResult){
+    private Map<String, Object> auditHelpInfo(@RequestParam String access_token, @RequestParam String askHelpId, @RequestParam Integer auditResult){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         AppUser auditor = appUserRepository.findByPhone(phone);
@@ -82,7 +141,7 @@ public class AskHelpController {
         }
 
         return responseMap;
-    }
+    }*/
 
     private String getPhoneByAccessToken(String access_token){
         return jdbcTemplate.queryForObject("SELECT user_name FROM oauth_access_token" +

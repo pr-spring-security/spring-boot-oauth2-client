@@ -6,6 +6,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.dao.DataAccessException;
@@ -26,7 +28,7 @@ import java.util.*;
 /**
  * Created by simon on 2016/8/17.
  */
-@Api(value = "新闻接口")
+@Api(value = "新闻接口", description = "新闻接口")
 @RestController
 @RequestMapping("/api/appNews")
 public class AppNewsController {
@@ -49,6 +51,8 @@ public class AppNewsController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
     public AppNewsController(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
@@ -58,7 +62,11 @@ public class AppNewsController {
     @RequestMapping(method = RequestMethod.GET)
     private Map<String,Object> get(@RequestParam Integer limit,@RequestParam Integer offset){
         Map<String,Object> responseMap = new LinkedHashMap<>();
-
+        logger.warn("hello, warn");
+        logger.error("hello, error");
+        logger.debug("hello, debug");
+        logger.info("hello, info");
+        logger.trace("hello, trace");
         try{
             List<AppNews> appNewsList = appNewsRepository.findAll(new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "lastEditTime"))).getContent();
             for (AppNews appNews : appNewsList){
@@ -302,7 +310,7 @@ public class AppNewsController {
         return responseMap;
     }
 
-    @ApiOperation(value = "获取新闻网页内容")
+    @ApiOperation(value = "获取新闻网页内容或新闻缩略图")
     @RequestMapping(value = "/{baseFolder}/{year}/{month}/{date}/{htmlName:.+}", method = RequestMethod.GET)
     @ResponseBody
     private ResponseEntity<?> getHtmlContent(@PathVariable("baseFolder")String baseFolder,

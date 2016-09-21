@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Created by simon on 2016/9/8.
  */
-@Api("参加活动")
+@Api(value = "参加活动", description = "参加活动")
 @RequestMapping("/api/joinEvents")
 @RestController
 public class JoinEventController {
