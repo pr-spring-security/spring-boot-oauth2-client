@@ -23,5 +23,12 @@ public class ServerContext {
     public static final String DAYU_APP_KEY = "23460263";
     public static final String DAYU_APP_SECRET = "b9deb39cba2cc72249b535f9435b938d";
 
+    public static final String JIGUANG_APP_KEY = "2cb1b6f5ee6c596abe813e49";
+    public static final String JIGUANG_MASTER_SECRET = "aa81152ecac5776f2ff6db91";
+
+    public static final Integer AUDIT_RESULT_WAIT = 0;
+    public static final Integer AUDIT_RESULT_SUCCESS = 1;
+    public static final Integer AUDIT_RESULT_REFUSED = 2;
+    public static final Integer AUDIT_RESULT_RESUBMIT = 3;
 
 }

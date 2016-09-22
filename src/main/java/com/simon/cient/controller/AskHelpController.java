@@ -4,16 +4,27 @@ import com.simon.cient.domain.AppUser;
 import com.simon.cient.domain.AppUserRepository;
 import com.simon.cient.domain.AskHelp;
 import com.simon.cient.domain.AskHelpRepository;
+import com.simon.cient.util.ImageUtil;
 import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +43,35 @@ public class AskHelpController {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private static final String ROOT = "askHelp";
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    private final ResourceLoader resourceLoader;
+
+    {
+        try{
+            if(!Files.exists(Paths.get(ROOT))){
+                Files.createDirectories(Paths.get(ROOT));
+            }
+        }catch (IOException e){
+            logger.error("create askHelp folder failed", e);
+        }
+    }
+
+    @Autowired
+    public AskHelpController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+
     @ApiOperation(value = "发布求助信息", notes = "")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "access_token", value = "access token", required = true, dataType = "string"),
+            @ApiImplicitParam(name = "content", value = "要发布的内容", required = true, dataType = "string"),
+            @ApiImplicitParam(name = "contentImg", value = "要发布的图片，base64编码的字符串", required = false, dataType = "string")
+    })
     @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(@RequestParam String access_token, @RequestParam String content){
+    private Map<String, Object> post(@RequestParam String access_token, @RequestParam String content, String contentImg){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         AppUser publisher = appUserRepository.findByPhone(phone);
@@ -45,6 +82,23 @@ public class AskHelpController {
         askHelp.setPublishTime(System.currentTimeMillis());
         askHelp.setContent(content);
         askHelp.setAuditResult(0);//0，待审核；1，审核成功；2，审核失败；3，重新提交。
+
+        //存储图片
+        String imgDir = ROOT + "/" + publisher.getPhone();
+        String imgUrl = imgDir + "/" + System.currentTimeMillis() + ".png";
+        try{
+            if (!Files.exists(Paths.get(imgDir))){
+                Files.createDirectories(Paths.get(imgDir));
+                if (!Files.exists(Paths.get(imgUrl))){
+                    Files.createFile(Paths.get(imgUrl));
+                }
+            }
+            Files.write(Paths.get(imgUrl), ImageUtil.convertToBytes(contentImg));
+            askHelp.setContentImg(imgUrl);
+        }catch (IOException e){
+            logger.error("存储图片出错", e);
+            logger.error(e.getMessage());
+        }
 
         try{
             responseMap.put(ServerContext.STATUS_CODE, 201);
@@ -61,7 +115,7 @@ public class AskHelpController {
 
     @ApiOperation(value = "修改求助信息", notes = "id是AskHelp的id")
     @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    private Map<String, Object> patch(@RequestParam String access_token, @PathVariable String id, @RequestParam String content){
+    private Map<String, Object> patch(@RequestParam String access_token, @PathVariable String id, @RequestParam String content,String contentImg){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         AppUser publisher = appUserRepository.findByPhone(phone);
@@ -73,6 +127,28 @@ public class AskHelpController {
         askHelp.setPublishTime(System.currentTimeMillis());
         askHelp.setContent(content);
         askHelp.setAuditResult(3);//0，待审核；1，审核成功；2，审核失败；3，重新提交。
+
+        String contentImgOld = askHelp.getContentImg();
+        try{
+            if (null!=contentImgOld&&!"".equals(contentImgOld)){
+                Files.write(Paths.get(contentImgOld), ImageUtil.convertToBytes(contentImg));
+            }else{
+                //存储图片
+                String imgDir = ROOT + "/" + publisher.getPhone();
+                String imgUrl = imgDir + "/" + System.currentTimeMillis() + ".png";
+                if (!Files.exists(Paths.get(imgDir))){
+                    Files.createDirectories(Paths.get(imgDir));
+                    if (!Files.exists(Paths.get(imgUrl))){
+                        Files.createFile(Paths.get(imgUrl));
+                    }
+                }
+                Files.write(Paths.get(imgUrl), ImageUtil.convertToBytes(contentImg));
+                askHelp.setContentImg(imgUrl);
+            }
+        }catch (IOException e){
+            logger.error("存储图片出错", e);
+            logger.error(e.getMessage());
+        }
 
         try{
             responseMap.put(ServerContext.STATUS_CODE, 201);
@@ -114,6 +190,41 @@ public class AskHelpController {
         return responseMap;
     }
 
+    @ApiOperation(value = "查找用户发布的不同状态下的求助信息", notes = "")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "auditResult", value = "审核状态", required = true, dataType = "int"),
+            @ApiImplicitParam(name = "access_token", value = "access_token", required = true, dataType = "string"),
+            @ApiImplicitParam(name = "limit", value = "返回记录行的最大数目", required = true, dataType = "int"),
+            @ApiImplicitParam(name = "offset", value = "偏移量", required = true, dataType = "int")
+    })
+    @RequestMapping(value = "/auditResult/{auditResult}", method = RequestMethod.GET)
+    private Map<String, Object> getByAuditResult(@PathVariable Integer auditResult, @RequestParam String access_token, @RequestParam Integer limit, @RequestParam Integer offset){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+        String phone = getPhoneByAccessToken(access_token);
+        AppUser currentUser = appUserRepository.findByPhone(phone);
+
+        try{
+            List<AskHelp> askHelpList = askHelpRepository.findByPublisherIdAndAuditResult(
+                    currentUser.getId(), auditResult,
+                    new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "publishTime")));
+
+            for (AskHelp askHelp : askHelpList){
+                askHelp.setPublisher(currentUser);
+                askHelp.setAuditor(appUserRepository.findById(askHelp.getAuditorId()));
+            }
+
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.DATA, askHelpList);
+            responseMap.put(ServerContext.MSG, "获取未通过审核信息成功");
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.DEV_MSG, "获取未通过审核信息失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+
+        return responseMap;
+    }
+
     /*@ApiOperation(value = "审核", notes = "access_token来自审核人")
     @PreAuthorize("#oauth2.isAdmin()")
     private Map<String, Object> auditHelpInfo(@RequestParam String access_token, @RequestParam String askHelpId, @RequestParam Integer auditResult){
@@ -142,6 +253,16 @@ public class AskHelpController {
 
         return responseMap;
     }*/
+
+    @ApiOperation(value = "获取内容图片")
+    @RequestMapping(value = "/{baseFolder}/{phoneFolder}/{fileName:.+}", method = RequestMethod.GET)
+    private ResponseEntity<?> getFile(@PathVariable("baseFolder")String root, @PathVariable("phoneFolder")String phoneFolder, @PathVariable("fileName")String fileName){
+        try{
+            return ResponseEntity.ok(resourceLoader.getResource("file:" + Paths.get(root+"/"+phoneFolder, fileName).toString()));
+        }catch (Exception e){
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     private String getPhoneByAccessToken(String access_token){
         return jdbcTemplate.queryForObject("SELECT user_name FROM oauth_access_token" +

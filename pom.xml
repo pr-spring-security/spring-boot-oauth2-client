@@ -104,6 +104,12 @@
 			<artifactId>jpush-client</artifactId>
 			<version>3.2.9</version>
 		</dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp</groupId>
+			<artifactId>mockwebserver</artifactId>
+			<version>1.5.4</version>
+			<scope>test</scope>
+		</dependency>
 
 	</dependencies>
 

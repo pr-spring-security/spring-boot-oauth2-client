@@ -85,15 +85,47 @@ public class AppUserController {
         return responseMap;
     }
 
-    @ApiOperation(value="获取用户信息")
-    @RequestMapping(value = "",method = RequestMethod.GET)
-    private Map<String, Object> get(@RequestParam String access_token){
+    @ApiOperation(value="根据access token获取用户信息")
+    @RequestMapping(value = "/accessToken",method = RequestMethod.GET)
+    private Map<String, Object> getUserInfoByAccessToken(@RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         try{
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "获取用户信息成功");
             responseMap.put(ServerContext.DATA, appUserRepository.findByPhone(phone));
+        }catch (DataRetrievalFailureException e) {
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "获取用户信息失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+        return responseMap;
+    }
+
+    @ApiOperation(value="根据userId获取用户信息")
+    @RequestMapping(value = "/id/{userId}",method = RequestMethod.GET)
+    private Map<String, Object> getUserInfoById(@PathVariable String userId){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+        try{
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "获取用户信息成功");
+            responseMap.put(ServerContext.DATA, appUserRepository.findById(userId));
+        }catch (DataRetrievalFailureException e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "获取用户信息失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+        return responseMap;
+    }
+
+    @ApiOperation(value="根据username获取用户信息")
+    @RequestMapping(value = "/username/{username}",method = RequestMethod.GET)
+    private Map<String, Object> getUserInfoByUsername(@PathVariable String username){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+        try{
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "获取用户信息成功");
+            responseMap.put(ServerContext.DATA, appUserRepository.findByUsername(username));
         }catch (DataRetrievalFailureException e){
             responseMap.put(ServerContext.STATUS_CODE, 404);
             responseMap.put(ServerContext.MSG, "获取用户信息失败");

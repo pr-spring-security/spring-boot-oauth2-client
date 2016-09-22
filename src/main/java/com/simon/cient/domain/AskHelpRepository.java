@@ -11,4 +11,5 @@ import java.util.List;
 public interface AskHelpRepository extends MongoRepository<AskHelp, String> {
     AskHelp findById(String id);
     List<AskHelp> findByAuditResult(Integer auditResult, Pageable pageable);
+    List<AskHelp> findByPublisherIdAndAuditResult(String publisherId, Integer auditResult, Pageable pageable);
 }

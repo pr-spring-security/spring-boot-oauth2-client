@@ -37,6 +37,8 @@ public class AskHelp {
     @Field("audit_result")
     private Integer auditResult;
 
+    private String contentImg;
+
     public String getId() {
         return id;
     }
@@ -107,5 +109,13 @@ public class AskHelp {
 
     public void setAuditorId(String auditorId) {
         this.auditorId = auditorId;
+    }
+
+    public String getContentImg() {
+        return contentImg;
+    }
+
+    public void setContentImg(String contentImg) {
+        this.contentImg = contentImg;
     }
 }
