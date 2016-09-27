@@ -12,10 +12,13 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class AppUser {
     @Id
     private String id;
-    @Indexed
+
+    @Indexed(unique = true)
     private String username;
-    @Indexed
+
+    @Indexed(unique = true)
     private String phone;
+
     private Boolean sex;
     private Integer age;
     private String birth;
@@ -31,6 +34,7 @@ public class AppUser {
 
     private String address;
 
+    @Indexed(unique = true)
     private String email;
 
     public String getId() {

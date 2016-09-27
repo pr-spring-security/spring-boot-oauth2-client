@@ -48,7 +48,7 @@ public class AppUserController {
         this.resourceLoader = resourceLoader;
     }
 
-    @ApiOperation(value = "\"我的\"模块访问的接口")
+    /*@ApiOperation(value = "\"我的\"模块访问的接口")
     @RequestMapping(value = "/personInfo", method = RequestMethod.GET)
     private Map<String, Object> getPersonInfo(@RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
@@ -83,7 +83,7 @@ public class AppUserController {
         }
 
         return responseMap;
-    }
+    }*/
 
     @ApiOperation(value="根据access token获取用户信息")
     @RequestMapping(value = "/accessToken",method = RequestMethod.GET)

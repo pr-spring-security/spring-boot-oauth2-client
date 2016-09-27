@@ -32,7 +32,7 @@ public class VeriCodeController {
     private VeriCodeRepository veriCodeRepository;
 
     @ApiOperation(value = "获取验证码", notes = "验证码有效时间是30分钟，验证码在失效前5分钟就会重新生成一个返回，给用户通过验证码修改密码足够的时间")
-    @ApiImplicitParam(name = "phone", value = "用户手机号", required = true, dataType = "string")
+    /*@ApiImplicitParam(name = "phone", value = "用户手机号", required = true, dataType = "string")*/
     @RequestMapping(value = "/getRegisterCode", method = RequestMethod.GET)
     private Map<String, Object> getVeriCode(@RequestParam String phone){
         Map<String, Object> responseMap = new LinkedHashMap<>();

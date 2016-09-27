@@ -1,6 +1,7 @@
 package com.simon.cient.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -12,6 +13,7 @@ public class Organization {
     @Id
     private String id;
 
+    @Indexed(unique = true)
     @Field("org_name")
     private String orgName;
 

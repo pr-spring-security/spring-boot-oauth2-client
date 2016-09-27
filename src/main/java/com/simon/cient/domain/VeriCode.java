@@ -2,17 +2,20 @@ package com.simon.cient.domain;
 
 import io.swagger.models.auth.In;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 /**
  * Created by simon on 2016/9/19.
  */
+//验证码
 @Document(collection = "veri_code")
 public class VeriCode {
     @Id
     private String id;
 
+    @Indexed(unique = true)
     private String phone;
 
     private Integer code;

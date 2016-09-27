@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,6 +33,11 @@ public class OauthUserController {
     AppUserRepository appUserRepository;
     @Autowired
     VeriCodeRepository veriCodeRepository;
+    @Autowired
+    JoinEventRepository joinEventRepository;
+    @Autowired
+    OrgEventRepository orgEventRepository;
+
 
     @ApiOperation(value = "登录", notes = "this is notes", httpMethod = "GET")
     @RequestMapping(value = "/{phone}/{password}", method = RequestMethod.GET)
@@ -42,9 +48,26 @@ public class OauthUserController {
         try {
             OauthUser oauthUser = findOauthUserByUsername(phone,password);
             if (null!=oauthUser){
+                AppUser appUser = appUserRepository.findByPhone(phone);
+                PersonInfo personInfo = new PersonInfo();
+                personInfo.setAppUser(appUser);
+
+                personInfo.setSignUpCount(joinEventRepository.countByPhone(phone));
+                List<JoinEvent> joinEventList = joinEventRepository.getByPhoneAndStatus(phone, ServerContext.SIGN_OUT_STATUS);
+                personInfo.setJoinCount(joinEventList.size());
+
+                int volHour = 0;
+                for(JoinEvent joinEvent : joinEventList) {
+                    OrgEvent orgEvent = orgEventRepository.findById(joinEvent.getEventId());
+                    Long beginTime = orgEvent.getBeginTime();
+                    Long endTime = orgEvent.getEndTime();
+                    volHour += (endTime - beginTime) / (1000 * 60 & 60);//java时间戳13位，计算到毫秒，这里是计算两个时间戳之间的小时差
+                }
+                personInfo.setVolHour(volHour);
+
                 responseMap.put(ServerContext.STATUS_CODE, 200);
                 responseMap.put(ServerContext.MSG, "登录成功");
-                responseMap.put(ServerContext.DATA, appUserRepository.findByPhone(phone));
+                responseMap.put(ServerContext.DATA, personInfo);
             }else{
                 responseMap.put(ServerContext.STATUS_CODE, 404);
                 responseMap.put(ServerContext.MSG, "用户名或者密码错误");

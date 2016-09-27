@@ -1,6 +1,7 @@
 package com.simon.cient.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -12,6 +13,7 @@ public class AppVersion {
     @Id
     private String id;
 
+    @Indexed(unique = true)
     @Field("version_name")
     private String versionName;
 
@@ -24,6 +26,7 @@ public class AppVersion {
     @Field("update_msg")
     private String updateMsg;
 
+    @Indexed(unique = true)
     @Field("version_code")
     private Integer versionCode;
 

@@ -6,10 +6,7 @@ import com.simon.cient.domain.AskHelp;
 import com.simon.cient.domain.AskHelpRepository;
 import com.simon.cient.util.ImageUtil;
 import com.simon.cient.util.ServerContext;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,13 +62,11 @@ public class AskHelpController {
     }
 
     @ApiOperation(value = "发布求助信息", notes = "")
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "access_token", value = "access token", required = true, dataType = "string"),
-            @ApiImplicitParam(name = "content", value = "要发布的内容", required = true, dataType = "string"),
-            @ApiImplicitParam(name = "contentImg", value = "要发布的图片，base64编码的字符串", required = false, dataType = "string")
-    })
     @RequestMapping(method = RequestMethod.POST)
-    private Map<String, Object> post(@RequestParam String access_token, @RequestParam String content, String contentImg){
+    private Map<String, Object> post(@RequestParam String access_token, @RequestParam String content, @RequestParam(required = false) String contentImg){
+        logger.warn(access_token);
+        logger.warn(content);
+        logger.warn(contentImg);
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         AppUser publisher = appUserRepository.findByPhone(phone);
@@ -83,21 +78,23 @@ public class AskHelpController {
         askHelp.setContent(content);
         askHelp.setAuditResult(0);//0，待审核；1，审核成功；2，审核失败；3，重新提交。
 
-        //存储图片
-        String imgDir = ROOT + "/" + publisher.getPhone();
-        String imgUrl = imgDir + "/" + System.currentTimeMillis() + ".png";
-        try{
-            if (!Files.exists(Paths.get(imgDir))){
-                Files.createDirectories(Paths.get(imgDir));
-                if (!Files.exists(Paths.get(imgUrl))){
-                    Files.createFile(Paths.get(imgUrl));
+        if (null!=contentImg&&!"".equals(contentImg)){
+            //存储图片
+            String imgDir = ROOT + "/" + publisher.getPhone();
+            String imgUrl = imgDir + "/" + System.currentTimeMillis() + ".png";
+            try{
+                if (!Files.exists(Paths.get(imgDir))){
+                    Files.createDirectories(Paths.get(imgDir));
+                    if (!Files.exists(Paths.get(imgUrl))){
+                        Files.createFile(Paths.get(imgUrl));
+                    }
                 }
+                Files.write(Paths.get(imgUrl), ImageUtil.convertToBytes(contentImg));
+                askHelp.setContentImg(imgUrl);
+            }catch (IOException e){
+                logger.error("存储图片出错", e);
+                logger.error(e.getMessage());
             }
-            Files.write(Paths.get(imgUrl), ImageUtil.convertToBytes(contentImg));
-            askHelp.setContentImg(imgUrl);
-        }catch (IOException e){
-            logger.error("存储图片出错", e);
-            logger.error(e.getMessage());
         }
 
         try{
@@ -115,7 +112,7 @@ public class AskHelpController {
 
     @ApiOperation(value = "修改求助信息", notes = "id是AskHelp的id")
     @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
-    private Map<String, Object> patch(@RequestParam String access_token, @PathVariable String id, @RequestParam String content,String contentImg){
+    private Map<String, Object> patch(@RequestParam String access_token, @PathVariable String id, @RequestParam String content, @RequestParam(required = false) String contentImg){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
         AppUser publisher = appUserRepository.findByPhone(phone);
@@ -191,12 +188,12 @@ public class AskHelpController {
     }
 
     @ApiOperation(value = "查找用户发布的不同状态下的求助信息", notes = "")
-    @ApiImplicitParams({
+    /*@ApiImplicitParams({
             @ApiImplicitParam(name = "auditResult", value = "审核状态", required = true, dataType = "int"),
             @ApiImplicitParam(name = "access_token", value = "access_token", required = true, dataType = "string"),
             @ApiImplicitParam(name = "limit", value = "返回记录行的最大数目", required = true, dataType = "int"),
             @ApiImplicitParam(name = "offset", value = "偏移量", required = true, dataType = "int")
-    })
+    })*/
     @RequestMapping(value = "/auditResult/{auditResult}", method = RequestMethod.GET)
     private Map<String, Object> getByAuditResult(@PathVariable Integer auditResult, @RequestParam String access_token, @RequestParam Integer limit, @RequestParam Integer offset){
         Map<String, Object> responseMap = new LinkedHashMap<>();
@@ -224,35 +221,6 @@ public class AskHelpController {
 
         return responseMap;
     }
-
-    /*@ApiOperation(value = "审核", notes = "access_token来自审核人")
-    @PreAuthorize("#oauth2.isAdmin()")
-    private Map<String, Object> auditHelpInfo(@RequestParam String access_token, @RequestParam String askHelpId, @RequestParam Integer auditResult){
-        Map<String, Object> responseMap = new LinkedHashMap<>();
-        String phone = getPhoneByAccessToken(access_token);
-        AppUser auditor = appUserRepository.findByPhone(phone);
-
-        AskHelp askHelp = askHelpRepository.findById(askHelpId);
-
-        AppUser publisher = appUserRepository.findById(askHelp.getPublisherId());
-
-        try{
-            askHelp.setAuditorId(auditor.getId());
-            askHelp.setAuditor(auditor);
-            askHelp.setAuditTime(System.currentTimeMillis());
-            askHelp.setAuditResult(auditResult);
-
-            askHelpRepository.save(askHelp);
-            responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "审核完成");
-        }catch (Exception e){
-            responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG, "审核信息有误，未审核成功");
-            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
-        }
-
-        return responseMap;
-    }*/
 
     @ApiOperation(value = "获取内容图片")
     @RequestMapping(value = "/{baseFolder}/{phoneFolder}/{fileName:.+}", method = RequestMethod.GET)
