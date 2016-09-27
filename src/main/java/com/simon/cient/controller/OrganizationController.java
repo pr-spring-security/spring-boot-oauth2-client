@@ -86,6 +86,25 @@ public class OrganizationController {
         return responseMap;
     }
 
+    @ApiOperation(value = "根据关键字获取组织列表")
+    @RequestMapping(value = "/key/{keyWord}", method = RequestMethod.GET)
+    private Map<String, Object> getByKeyword(@PathVariable String keyWord, @RequestParam Integer limit, @RequestParam Integer offset){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+
+        try{
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "根据关键字获取组织成功");
+            responseMap.put(ServerContext.DATA, organizationRepository.findByOrgNameLike(keyWord,
+                    new PageRequest(offset/limit, limit, new Sort(Sort.Direction.DESC, "orgName"))));
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "根据关键字获取组织失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+
+        return responseMap;
+    }
+
     @ApiOperation(value = "获取组织简介和组织标识")
     @RequestMapping(value = "/{baseFolder}/{fileName:.+}", method = RequestMethod.GET)
     private ResponseEntity<?> getFile(@PathVariable("baseFolder")String root, @PathVariable("fileName")String fileName){

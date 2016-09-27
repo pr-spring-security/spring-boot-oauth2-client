@@ -236,6 +236,29 @@ public class OrgEventController {
         return responseMap;
     }
 
+    @ApiOperation(value = "根据关键字获取活动", notes = "")
+    @RequestMapping(value = "/key/{keyWord}", method = RequestMethod.GET)
+    private Map<String, Object> findByKeyword(@PathVariable String keyWord, @RequestParam Integer limit, @RequestParam Integer offset){
+        Map<String, Object> responseMap = new LinkedHashMap<>();
+
+        try {
+            List<OrgEvent> orgEventList = orgEventRepository.findByThemeLike(
+                    keyWord, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "publishTime")));
+            for (OrgEvent orgEvent : orgEventList){
+                orgEvent.setPublisher(appUserRepository.findById(orgEvent.getPublisherId()));
+            }
+            responseMap.put(ServerContext.STATUS_CODE, 200);
+            responseMap.put(ServerContext.MSG, "根据关键词获取活动成功");
+            responseMap.put(ServerContext.DATA, orgEventList);
+        }catch (Exception e){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "根据关键词获取活动失败");
+            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+        }
+
+        return responseMap;
+    }
+
     @ApiOperation(value="获取活动相关文件")
     @RequestMapping(method = RequestMethod.GET, value = "/posters/{parentDir}/{filename:.+}")
     @ResponseBody
