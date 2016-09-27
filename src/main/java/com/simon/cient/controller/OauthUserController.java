@@ -12,6 +12,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.ResultSet;
@@ -46,8 +47,10 @@ public class OauthUserController {
         Map<String, Object> responseMap = new LinkedHashMap<>();
 
         try {
-            OauthUser oauthUser = findOauthUserByUsername(phone,password);
-            if (null!=oauthUser){
+            OauthUser oauthUser = findOauthUserByUsername(phone);
+            //用户密码被加密了
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(11);
+            if (null!=oauthUser&&encoder.matches(password, oauthUser.getPassword())){
                 AppUser appUser = appUserRepository.findByPhone(phone);
                 PersonInfo personInfo = new PersonInfo();
                 personInfo.setAppUser(appUser);
@@ -84,6 +87,11 @@ public class OauthUserController {
     @ApiOperation(value = "注册", notes = "注册成功返回appUser对象，包含自动生成的username", httpMethod = "POST")
     @RequestMapping(method = RequestMethod.POST)
     private Map<String, Object> post(@RequestParam Integer code, @RequestParam String phone, @RequestParam String password) {
+
+        //加密密码
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(11);
+        password = encoder.encode(password);
+
         Map<String, Object> responseMap = new LinkedHashMap<>();
         VeriCode veriCode = veriCodeRepository.findByPhoneAndCode(phone, code);
         if (null!=veriCode){
@@ -123,15 +131,23 @@ public class OauthUserController {
     private Map<String, Object> updatePassword(@RequestParam String access_token, @PathVariable String oldPassword,@PathVariable String newPassword){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
+        OauthUser oauthUser = findOauthUserByUsername(phone);
 
-        try{
-            this.jdbcTemplate.update("UPDATE users SET password = ? WHERE username = ? AND password = ?", newPassword, phone, oldPassword);
-            responseMap.put(ServerContext.STATUS_CODE, 200);
-            responseMap.put(ServerContext.MSG, "更新密码成功");
-        }catch (Exception e){
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(11);
+
+        if (null!=oauthUser&&encoder.matches(oldPassword, oauthUser.getPassword())){
+            try{
+                this.jdbcTemplate.update("UPDATE users SET password = ? WHERE username = ?", newPassword, phone);
+                responseMap.put(ServerContext.STATUS_CODE, 200);
+                responseMap.put(ServerContext.MSG, "更新密码成功");
+            }catch (Exception e){
+                responseMap.put(ServerContext.STATUS_CODE, 404);
+                responseMap.put(ServerContext.MSG, "更新密码失败");
+                responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+            }
+        }else{
             responseMap.put(ServerContext.STATUS_CODE, 404);
-            responseMap.put(ServerContext.MSG, "更新密码失败");
-            responseMap.put(ServerContext.DEV_MSG, e.getMessage());
+            responseMap.put(ServerContext.MSG, "手机号尚未注册，或者密码错误");
         }
 
         return responseMap;
@@ -140,6 +156,11 @@ public class OauthUserController {
     @ApiOperation(value = "更新密码（使用手机验证码）",notes = "此处还需要传一次验证码，防止有人破解app后知道更新密码api，直接更新其他用户密码")
     @RequestMapping(value = "/updatePwdWithoutOldPwd", method = RequestMethod.PATCH)
     private Map<String, Object> updatePwdWithoutOldPwd(@RequestParam String phone, @RequestParam Integer code, @RequestParam String newPwd){
+
+        //加密密码
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(11);
+        newPwd = encoder.encode(newPwd);
+
         Map<String, Object> responseMap = new LinkedHashMap<>();
 
         try{
@@ -160,10 +181,10 @@ public class OauthUserController {
         return responseMap;
     }
 
-    public OauthUser findOauthUserByUsername(String username, String password) {
+    public OauthUser findOauthUserByUsername(String username) {
         return jdbcTemplate.queryForObject(
-                "SELECT username,password,enabled FROM users where username=? AND password=?",
-                new Object[]{username, password}, new RowMapper<OauthUser>() {
+                "SELECT username,password,enabled FROM users where username=?",
+                new Object[]{username}, new RowMapper<OauthUser>() {
                     @Override
                     public OauthUser mapRow(ResultSet resultSet, int i) throws SQLException {
                         OauthUser oauthUser = new OauthUser();
