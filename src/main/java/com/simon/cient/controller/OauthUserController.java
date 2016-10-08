@@ -5,6 +5,8 @@ import com.simon.cient.domain.jdbc.OauthUser;
 import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -38,6 +40,8 @@ public class OauthUserController {
     JoinEventRepository joinEventRepository;
     @Autowired
     OrgEventRepository orgEventRepository;
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 
     @ApiOperation(value = "登录", notes = "this is notes", httpMethod = "GET")
@@ -88,6 +92,10 @@ public class OauthUserController {
     @RequestMapping(method = RequestMethod.POST)
     private Map<String, Object> post(@RequestParam Integer code, @RequestParam String phone, @RequestParam String password) {
 
+        logger.warn("code: "+code);
+        logger.warn("phone: "+phone);
+        logger.warn("password: "+password);
+
         //加密密码
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(11);
         password = encoder.encode(password);
@@ -102,13 +110,20 @@ public class OauthUserController {
                 int result2 = jdbcTemplate.update("INSERT INTO authorities (username, authority) VALUES (?, ?)",
                         phone, "ROLE_APP");
 
+                logger.warn("result of insert to users: "+result1);
+                logger.warn("result of insert to authorities: "+result2);
+
                 AppUser appUser = new AppUser();
                 //String name = "sc"+Long.toString(System.currentTimeMillis()/1000, 26);
                 String name = "starchild"+phone.substring(phone.length()-4);
                 appUser.setUsername(name);
                 appUser.setPhone(phone);
 
-                if (result1 > 0 && result2 > 0 && null!=appUserRepository.insert(appUser)) {
+                appUser = appUserRepository.save(appUser);
+
+                logger.warn(appUser.toString());
+
+                if (result1 > 0 && result2 > 0 && null!=appUser) {
                     responseMap.put(ServerContext.STATUS_CODE, 201);//201 (Created)
                     responseMap.put(ServerContext.MSG, "注册成功");
                     responseMap.put(ServerContext.DATA, appUserRepository.findByUsername(name));

@@ -187,7 +187,7 @@ public class AskHelpController {
         return responseMap;
     }
 
-    @ApiOperation(value = "查找用户发布的不同状态下的求助信息", notes = "")
+    @ApiOperation(value = "查找用户发布的不同状态下的求助信息", notes = "0，待审核；1，审核成功；2，审核失败；3，重新提交。")
     /*@ApiImplicitParams({
             @ApiImplicitParam(name = "auditResult", value = "审核状态", required = true, dataType = "int"),
             @ApiImplicitParam(name = "access_token", value = "access_token", required = true, dataType = "string"),

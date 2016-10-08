@@ -34,7 +34,6 @@ public class AppUser {
 
     private String address;
 
-    @Indexed(unique = true)
     private String email;
 
     public String getId() {
@@ -123,5 +122,22 @@ public class AppUser {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    @Override
+    public String toString() {
+        return "AppUser{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", phone='" + phone + '\'' +
+                ", sex=" + sex +
+                ", age=" + age +
+                ", birth='" + birth + '\'' +
+                ", personBrief='" + personBrief + '\'' +
+                ", headPhoto='" + headPhoto + '\'' +
+                ", visitCard='" + visitCard + '\'' +
+                ", address='" + address + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }

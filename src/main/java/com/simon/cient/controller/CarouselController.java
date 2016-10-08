@@ -6,11 +6,11 @@ import com.simon.cient.util.ServerContext;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,6 +23,13 @@ import java.util.Map;
 public class CarouselController {
     @Autowired
     private CarouselRepository carouselRepository;
+
+    private final ResourceLoader resourceLoader;
+
+    @Autowired
+    public CarouselController(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
 
     @ApiOperation(value = "插入一条轮播", notes = "不需要传id")
     @RequestMapping(method = RequestMethod.POST)
@@ -54,5 +61,14 @@ public class CarouselController {
             responseMap.put(ServerContext.DEV_MSG, e.getMessage());
         }
         return responseMap;
+    }
+
+    @RequestMapping(value = "/{baseFolder}/{fileName:.+}", method = RequestMethod.GET)
+    private ResponseEntity<?> getFile(@PathVariable("baseFolder")String root, @PathVariable("fileName")String fileName){
+        try{
+            return ResponseEntity.ok(resourceLoader.getResource("file:" + Paths.get(root, fileName).toString()));
+        }catch (Exception e){
+            return ResponseEntity.notFound().build();
+        }
     }
 }
