@@ -45,6 +45,13 @@ public class JoinEventController {
         JoinEvent joinEventFind = joinEventRepository.findByEventIdAndPhone(eventId, appUser.getPhone());
         OrgEvent orgEvent = orgEventRepository.findById(eventId);
 
+        //不允许在截止时间后报名活动
+        if ((orgEvent.getDeadline()-System.currentTimeMillis())<=0){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "报名失败，已经过了截止时间了");
+            return responseMap;
+        }
+
         if (null!=joinEventFind){
             responseMap.put(ServerContext.STATUS_CODE, 409);
             responseMap.put(ServerContext.MSG, "您已报名");
@@ -73,15 +80,23 @@ public class JoinEventController {
         return responseMap;
     }
 
-    @ApiOperation(value = "活动签到", notes = "签到失败的情况：未到签到时间，未报名")
+    @ApiOperation(value = "活动签到", notes = "活动开场前半小时和开场后半小时可以签到")
     @RequestMapping(value = "/signIn", method = RequestMethod.PATCH)
     private Map<String, Object> signIn(@RequestParam String eventId, @RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         OrgEvent orgEvent = orgEventRepository.findById(eventId);
         String phone = getPhoneByAccessToken(access_token);
 
+        //活动开场前半小时和开场后半小时可以签到
+        if (Math.abs(System.currentTimeMillis()-orgEvent.getEndTime())>=30*60*1000){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "签到失败，不在允许签到时间范围内");
+            return responseMap;
+        }
+
         try{
             JoinEvent joinEvent = joinEventRepository.findByEventIdAndPhone(eventId, phone);
+
 
             joinEvent.setSignInTime(System.currentTimeMillis());
             joinEvent.setStatus(2);//2，进行中
@@ -101,12 +116,18 @@ public class JoinEventController {
         return responseMap;
     }
 
-    @ApiOperation(value = "活动签退", notes = "签退失败的情况：未到签退时间")
+    @ApiOperation(value = "活动签退", notes = "允许在活动结束前半小时开始签退")
     @RequestMapping(value = "/signOut", method = RequestMethod.PATCH)
     private Map<String, Object> signOut(@RequestParam String eventId, @RequestParam String access_token){
         Map<String, Object> responseMap = new LinkedHashMap<>();
         OrgEvent orgEvent = orgEventRepository.findById(eventId);
         String phone = getPhoneByAccessToken(access_token);
+
+        //允许在活动结束前半小时开始签退
+        if((System.currentTimeMillis()-orgEvent.getEndTime())<=(-30)*60*1000){
+            responseMap.put(ServerContext.STATUS_CODE, 404);
+            responseMap.put(ServerContext.MSG, "签退失败，未到签退时间");
+        }
 
         try{
             JoinEvent joinEvent = joinEventRepository.findByEventIdAndPhone(eventId, phone);
@@ -160,10 +181,16 @@ public class JoinEventController {
         Map<String, Object> responseMap = new LinkedHashMap<>();
         String phone = getPhoneByAccessToken(access_token);
 
+        //因为app设计的问题，此处需要对进行中的活动的状态做判断，用户要查看进行中的或已完成的活动，
+        //比较当前时间与活动结束时间，自动修改用户参加的活动的状态
         try {
             List<JoinEvent> joinEventList = joinEventRepository.findByPhoneAndStatus(phone, status, new PageRequest(offset/limit, limit, new Sort(Sort.Direction.ASC, "eventId")));
             for (JoinEvent joinEvent : joinEventList){
-                joinEvent.setOrgEvent(orgEventRepository.findById(joinEvent.getEventId()));
+                OrgEvent orgEvent = orgEventRepository.findById(joinEvent.getEventId());
+                joinEvent.setOrgEvent(orgEvent);
+                if (System.currentTimeMillis()>=orgEvent.getEndTime()&&(status==2||status==3)){
+                    joinEvent.setStatus(3);
+                }
             }
             responseMap.put(ServerContext.STATUS_CODE, 200);
             responseMap.put(ServerContext.MSG, "获取活动成功");
